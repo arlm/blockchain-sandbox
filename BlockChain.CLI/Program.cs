@@ -20,7 +20,8 @@ namespace BlockChain.CLI
 
                 }
 
-                if (options.Command == "mine" ^ !string.IsNullOrWhiteSpace(options.Data))
+                if ((options.Command == "mine" || options.Command == "connect" || options.Command == "open") 
+                    ^ !string.IsNullOrWhiteSpace(options.Data))
                 {
                     Console.Out.WriteLine(options.GetUsage());
                     return;
