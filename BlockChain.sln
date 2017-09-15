@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 15.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockChain.Test", "BlockChain.Test\BlockChain.Test.csproj", "{69C3F7C6-BB74-4F0E-9291-12BDA3728716}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockChain.CLI", "BlockChain.CLI\BlockChain.CLI.csproj", "{E473D3AA-AFC4-45EB-8EB6-ED18190D753B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{69C3F7C6-BB74-4F0E-9291-12BDA3728716}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{69C3F7C6-BB74-4F0E-9291-12BDA3728716}.Debug|x86.Build.0 = Debug|Any CPU
+		{69C3F7C6-BB74-4F0E-9291-12BDA3728716}.Release|x86.ActiveCfg = Release|Any CPU
+		{69C3F7C6-BB74-4F0E-9291-12BDA3728716}.Release|x86.Build.0 = Release|Any CPU
+		{E473D3AA-AFC4-45EB-8EB6-ED18190D753B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E473D3AA-AFC4-45EB-8EB6-ED18190D753B}.Debug|x86.Build.0 = Debug|Any CPU
+		{E473D3AA-AFC4-45EB-8EB6-ED18190D753B}.Release|x86.ActiveCfg = Release|Any CPU
+		{E473D3AA-AFC4-45EB-8EB6-ED18190D753B}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
