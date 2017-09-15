@@ -11,7 +11,7 @@ namespace BlockChain.CLI
         [ValueOption(2)]
         public string Data { get; set; }
 
-        [Option("verbose", DefaultValue = true, HelpText = "Prints all messages to standard output.")]
+        [Option("verbose", DefaultValue = false, HelpText = "Prints all messages to standard output.")]
         public bool Verbose { get; set; }
 
         [ParserState]
@@ -22,14 +22,14 @@ namespace BlockChain.CLI
         {
             return HelpText.AutoBuild(this, (HelpText current) =>
               {
-                  current.Heading = "Blockchain CLI";
+                  current.Heading = "μNode Blockchain CLI";
                   current.AddPreOptionsLine("Command-line verbs:");
                   current.AddPreOptionsLine(string.Empty);
                   current.AddPreOptionsLine("  blockchain\t\tShows the entire blockchain with data");
                   current.AddPreOptionsLine("  mine \"block data\"\t\tMines a new block");
                   current.AddPreOptionsLine("  peers\t\t\tShows connected peers");
                   current.AddPreOptionsLine("  connect\t\tConnects to a peer");
-                  current.AddPreOptionsLine("  discover\t\tDiscovers new peers");
+                  current.AddPreOptionsLine("  discover\t\tDiscovers new peers from your current network");
                   current.AddPreOptionsLine("  open\t\t\tOpens port for connections");
                   current.AddPreOptionsLine(string.Empty);
                   current.AddPreOptionsLine("Command-line options:");
