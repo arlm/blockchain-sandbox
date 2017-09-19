@@ -8,6 +8,8 @@ namespace BlockChain.Core
 {
     public sealed class Chain
     {
+        internal const int STANDARD_DIFFICULTY = 4;
+
         public static readonly Block GenesisBlock = new Block
         {
             Index = 0,
@@ -19,17 +21,32 @@ namespace BlockChain.Core
 
         private readonly LinkedList<Block> blockchain = new LinkedList<Block>();
 
+        public int Difficulty { get; private set; } = STANDARD_DIFFICULTY;
+
+        public int Length => this.blockchain.Count;
         public LinkedListNode<Block> LastBlock => this.blockchain.Last;
         public LinkedListNode<Block> FirstBlock => this.blockchain.First;
 
-        public Chain()
+        public Chain() => this.blockchain.AddFirst(GenesisBlock);
+
+        public Chain(IEnumerable<Block> blockchain)
         {
-            this.blockchain.AddFirst(GenesisBlock);
+            if ((blockchain?.Count() ?? 0) == 0)
+            {
+                this.blockchain.AddFirst(GenesisBlock);
+            }
+            else
+            {
+                foreach (var block in blockchain)
+                {
+                    this.blockchain.AddLast(block);
+                }
+            }
         }
 
         public Chain Add(Block newBlock)
         {
-            if (Block.IsValidNewBlock(newBlock, LastBlock.Value))
+            if (Block.IsValidNewBlock(newBlock, LastBlock.Value, this.Difficulty))
             {
                 this.blockchain.AddLast(newBlock);
                 //broadcast(responseLatestMsg());
@@ -38,29 +55,30 @@ namespace BlockChain.Core
             return this;
         }
 
-        public Block GenerateNextBlock(string data)
+        internal Block Mine(string seed, DateTime timestamp, uint nonce)
         {
-            var bytes = Encoding.Unicode.GetBytes(data);
-            return GenerateNextBlock(bytes);
-        }
-
-        public Block GenerateNextBlock(byte[] data)
-        {
-            var last = this.blockchain.Last.Value;
-
-            var block = new Block
-            {
-                Index = last.Index + 1,
-                TimeStamp = DateTime.Now,
-                PreviousHash = last.PreviousHash,
-                Data = data
-            };
-
-            var nextHash = block.CalculateHash();
-            block.Hash = nextHash;
-
+            var block = this.GenerateNextBlock(seed, timestamp, nonce);
+            Add(block);
             return block;
         }
+
+        public Block Mine(string seed)
+        {
+            var block = this.GenerateNextBlock(seed);
+            Add(block);
+            return block;
+        }
+
+        public Block Mine(byte[] seed)
+        {
+            var block = this.GenerateNextBlock(seed);
+            Add(block);
+            return block;
+        }
+
+        public Block GenerateNextBlock(string data, DateTime? timestamp = null, uint nonce = 0, int? difficulty = null) => this.blockchain.Last.Value.GenerateChild(data, timestamp, nonce, difficulty);
+
+        public Block GenerateNextBlock(byte[] data, DateTime? timestamp = null, uint nonce = 0, int? difficulty = null) => this.blockchain.Last.Value.GenerateChild(data, timestamp, nonce, difficulty);
 
         public Chain ReplaceChain(IEnumerable<Block> newBlocks)
         {
@@ -70,7 +88,7 @@ namespace BlockChain.Core
 
                 this.blockchain.Clear();
 
-                foreach(var block in newBlocks)
+                foreach (var block in newBlocks)
                 {
                     this.blockchain.AddLast(block);
                 }
@@ -96,7 +114,7 @@ namespace BlockChain.Core
 
             while (block.Next != null)
             {
-                if (!Block.IsValidNewBlock(block.Next.Value, block.Value))
+                if (!Block.IsValidNewBlock(block.Next.Value, block.Value, this.Difficulty))
                 {
                     return false;
                 }
@@ -111,9 +129,9 @@ namespace BlockChain.Core
         {
             var sb = new StringBuilder();
 
-            foreach(var block in this.blockchain)
+            foreach (var block in this.blockchain)
             {
-                sb.AppendLine(block.ToString());    
+                sb.AppendLine(block.ToString());
             }
 
             return sb.ToString();
