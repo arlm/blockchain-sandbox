@@ -49,8 +49,8 @@ namespace BlockChain.CLI
                     case "mine":
                         StartMarquee();
                         var newBlock = blockchain.Mine(options.Data);
-						StopMarquee();
-                        Console.Out.WriteLine($"Successfully added {options.Data} with Nonce={newBlock.Nonce} to the blockchain\n{newBlock}");
+                        StopMarquee();
+                        Console.Out.WriteLine($"🎉  Congratulations!A new block was mined. 💎\n\n{newBlock.Dump()}\n");
                         break;
                     case "peers":
                     case "connect":

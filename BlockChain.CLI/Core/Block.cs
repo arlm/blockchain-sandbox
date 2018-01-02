@@ -32,7 +32,7 @@ namespace BlockChain.Core
 
         public bool IsValidChild(Block child) => IsValidNewBlock(child, this);
 
-        public Block GenerateChild(string data, DateTime? timestamp =  null, uint nonce = 0, int? difficulty = null) => GenerateChild(Encoding.Unicode.GetBytes(data), timestamp, nonce, difficulty);
+        public Block GenerateChild(string data, DateTime? timestamp = null, uint nonce = 0, int? difficulty = null) => GenerateChild(Encoding.Unicode.GetBytes(data), timestamp, nonce, difficulty);
 
         public Block GenerateChild(byte[] data, DateTime? timestamp = null, uint nonce = 0, int? difficulty = null)
         {
@@ -177,6 +177,25 @@ namespace BlockChain.Core
             string hash = this.Hash == null ? "NULL" : this.Hash.Dump();
 
             return $"[Block: Index={this.Index}, PreviousHash={previousHash}, TimeStamp={this.TimeStamp} ({this.TimeStamp.ToBinary()}), Data=\"{data}\", Hash={hash}, Nonce={this.Nonce}]";
+        }
+
+        public string Dump()
+        {
+            var sb = new StringBuilder();
+
+            string previousHash = this.PreviousHash == null ? "NULL" : this.PreviousHash.Dump();
+            string data = (this.Data?.Length ?? 0) == 0 ? "NULL" : Encoding.Unicode.GetString(this.Data);
+            string hash = this.Hash == null ? "NULL" : this.Hash.Dump();
+            string index = this.Index == 0 ? "🏆  Genesis Block" : $"⛓  Block #{this.Index}";
+
+            sb.AppendLine(index);
+            sb.AppendFormat("⏮  PreviousHash={0}\n", previousHash);
+            sb.AppendFormat("📅  TimeStamp={0} ({1})\n", this.TimeStamp, this.TimeStamp.ToBinary());
+            sb.AppendFormat("📄  Data=\"{0}\"\n", data);
+            sb.AppendFormat("📛  Hash={0}\n", hash);
+            sb.AppendFormat("🔨  Nonce={0}\n", this.Nonce);
+
+            return sb.ToString();
         }
 
         public int CompareTo(object obj) => (this.CompareTo(obj as Block));

@@ -22,7 +22,7 @@ namespace BlockChain.CLI
         {
             return HelpText.AutoBuild(this, (HelpText current) =>
               {
-                  current.Heading = "μNode Blockchain CLI";
+                current.Heading = "👋  Welcome to μNode Blockchain CLI";
                   current.AddPreOptionsLine("Command-line verbs:");
                   current.AddPreOptionsLine(string.Empty);
                   current.AddPreOptionsLine("  blockchain\t\tShows the entire blockchain with data");

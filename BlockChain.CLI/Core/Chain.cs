@@ -131,7 +131,7 @@ namespace BlockChain.Core
 
             foreach (var block in this.blockchain)
             {
-                sb.AppendLine(block.ToString());
+                sb.AppendLine(block.Dump());
             }
 
             return sb.ToString();
