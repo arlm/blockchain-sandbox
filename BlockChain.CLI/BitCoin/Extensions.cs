@@ -79,88 +79,129 @@ namespace BlockChain.CLI.BitCoin
 
         public static string EncodeBase58(this byte[] plainText)
         {
-            var sb = new StringBuilder();
+            int zeroes = 0;
+            int length = 0;
+            int begin = 0;
 
-            //while (number > 0)
-            //{
-            //    var remainder = (number % 58);
-            //    number = Convert.ToUInt32(number / 58);
-            //    sb.Insert(0, BASE58_ALPHABET[Convert.ToInt32(remainder)]);
-            //}
+            while (begin != plainText.Length && plainText[begin] == 0)
+            {
+                begin++;
+                zeroes++;
+            }
 
-            return sb.ToString();
+            int size = (plainText.Length - begin) * 138 / 100 + 1; // log(256) / log(58), rounded up.
+            var b58 = new byte[size];
+
+            while (begin != plainText.Length)
+            {
+                int carry = plainText[begin];
+                int tempLength = 0;
+
+                for (int pointer = b58.Length - 1; (carry != 0 || tempLength < length) && (pointer > 0); pointer--, tempLength++)
+                {
+                    carry += 256 * b58[pointer];
+                    b58[pointer] = (byte)(carry % 58);
+                    carry /= 58;
+                }
+
+                length = tempLength;
+                begin++;
+            }
+
+            int index = size - length;
+
+            while (index < b58.Length && b58[index] == 0)
+            {
+                index++;
+            }
+
+            var destination = new char[zeroes + (b58.Length - index)];
+            for (int copyIndex = 0; copyIndex < destination.Length; copyIndex++)
+            {
+                if (copyIndex < zeroes)
+                {
+                    destination[copyIndex] = '1';
+                }
+                else
+                {
+                    destination[copyIndex] = BASE58_ALPHABET[b58[index++]];
+                }
+            }
+
+            return new string(destination);
         }
 
         public static byte[] DecodeBase58(this string encodedData)
         {
-            int i = 0;
+            int begin = 0;
 
-            while (i < encodedData.Length)
+            while (begin < encodedData.Length)
             {
-                if (encodedData[i] == 0 || !Char.IsWhiteSpace(encodedData[i]))
+                if (encodedData[begin] == 0 || !Char.IsWhiteSpace(encodedData[begin]))
                 {
                     break;
                 }
-                i++;
+                begin++;
             }
 
-            int zeros = 0;
+            int zeroes = 0;
 
-            while (encodedData[i] == '1')
+            while (encodedData[begin] == '1')
             {
-                zeros++;
-                i++;
+                zeroes++;
+                begin++;
             }
 
-            byte[] b256 = new byte[(encodedData.Length - i) * 733 / 1000 + 1];
+            int size = (encodedData.Length - begin) * 733 / 1000 + 1; // log(58) / log(256), rounded up.
+            byte[] b256 = new byte[size];
 
-            while (i < encodedData.Length && !Char.IsWhiteSpace(encodedData[i]))
+            while (begin < encodedData.Length && !Char.IsWhiteSpace(encodedData[begin]))
             {
-                int ch = BASE58_ALPHABET.IndexOf(encodedData[i]);
+                int ch = BASE58_ALPHABET.IndexOf(encodedData[begin]);
 
                 if (ch == -1) //null
                 {
                     return new byte[] { };
                 }
 
-                int carry = BASE58_ALPHABET.IndexOf(encodedData[i]);
+                int carry = BASE58_ALPHABET.IndexOf(encodedData[begin]);
 
-                for (int k = b256.Length - 1; k >= 0; k--)
+                for (int pointer = b256.Length - 1; pointer >= 0; pointer--)
                 {
-                    carry += 58 * b256[k];
-                    b256[k] = (byte)(carry % 256);
+                    carry += 58 * b256[pointer];
+                    b256[pointer] = (byte)(carry % 256);
                     carry /= 256;
                 }
-                i++;
+                begin++;
             }
 
-            while (i < encodedData.Length && Char.IsWhiteSpace(encodedData[i]))
+            while (begin < encodedData.Length && Char.IsWhiteSpace(encodedData[begin]))
             {
-                i++;
+                begin++;
             }
 
-            if (i != encodedData.Length)
+            if (begin != encodedData.Length)
             {
                 return new byte[] { };
             }
 
-            int j = 0;
+            int index = 0;
 
-            while (j < b256.Length && b256[j] == 0)
+            while (index < b256.Length && b256[index] == 0)
             {
-                j++;
+                index++;
             }
 
-            var plainTextBytes = new byte[zeros + (b256.Length - j)];
-            for (int kk = 0; kk < plainTextBytes.Length; kk++)
+            var plainTextBytes = new byte[zeroes + (b256.Length - index)];
+            for (int copyIndex = 0; copyIndex < plainTextBytes.Length; copyIndex++)
             {
-                if (kk < zeros)
+                if (copyIndex < zeroes)
                 {
-                    plainTextBytes[kk] = 0x00;
+                    plainTextBytes[copyIndex] = 0x00;
                 }
                 else
                 {
-                    plainTextBytes[kk] = b256[j++];
+                    plainTextBytes[copyIndex] = b256[index++];
                 }
             }
             return plainTextBytes;

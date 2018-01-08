@@ -104,7 +104,7 @@ namespace BlockChain.Test
         [TestCaseSource("Base58TestData")]
         public void Base58Encoding(byte[] plainText, string encodedData)
         {
-            //Assert.AreEqual(encodedData, plainText.EncodeBase58());
+            Assert.AreEqual(encodedData, plainText.EncodeBase58());
             Assert.AreEqual(plainText, encodedData.DecodeBase58());
         }
 
