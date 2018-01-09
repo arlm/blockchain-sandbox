@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text;
-using BlockChain.CLI.BitCoin;
+using BlockChain.CLI.Bitcoin;
 using NUnit.Framework;
 
 namespace BlockChain.Test

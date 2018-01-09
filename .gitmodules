@@ -1,0 +1,3 @@
+[submodule "RIPEMD160"]
+	path = RIPEMD160
+	url = git@github.com:arlm/RIPEMD160.net.git

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-namespace BlockChain.CLI.BitCoin
+namespace BlockChain.CLI.Bitcoin
 {
-    public static class Extensions
+    public static class EncodingExtensions
     {
         public static string EncodeBase64(this Encoding encoding, string plainText)
         {
@@ -77,6 +77,7 @@ namespace BlockChain.CLI.BitCoin
             return Convert.ToUInt32(decoded);
         }
 
+        // Code based on https://github.com/bitcoin/bitcoin/blob/master/src/base58.cpp
         public static string EncodeBase58(this byte[] plainText)
         {
             int zeroes = 0;
@@ -131,6 +132,7 @@ namespace BlockChain.CLI.BitCoin
             return new string(destination);
         }
 
+        // Code based on https://github.com/bitcoin/bitcoin/blob/master/src/base58.cpp
         public static byte[] DecodeBase58(this string encodedData)
         {
             int begin = 0;
