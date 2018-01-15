@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using BlockChain.CLI.Verbs;
 using BlockChain.Core;
 using CommandLine;
 
@@ -25,44 +27,106 @@ namespace BlockChain.CLI
             Console.CancelKeyPress += Console_CancelKeyPress;
 
             var options = new Options();
+            string invokedVerb = null;
+            object invokedVerbInstance = null;
+            object invokedCommandInstance = null;
 
-            if (Parser.Default.ParseArguments(args, options))
+            if (Parser.Default.ParseArguments(args, options, (verb, subOptions) =>
+                {
+                    Console.WriteLine($">>> {string.Join(",", args)}");
+                    Console.WriteLine($">>> {options.BitcoinVerb?.Dump() ?? "null"}");
+                    Console.WriteLine($">>> {options.BlockChainVerb?.Dump() ?? "null"}");
+                    Console.WriteLine($"=======================================================");
+
+                    invokedVerb = verb;
+                    invokedVerbInstance = subOptions;
+                }))
             {
-                if (options.Verbose && !string.IsNullOrWhiteSpace(options.Command))
+                if (!Parser.Default.ParseArguments(args.Skip(1).ToArray(), invokedVerbInstance, (verb, subOptions) =>
                 {
-                    Console.Out.WriteLine($"Running {options.Command} verb [{options.Data}]\n");
-
-                }
-
-                if ((options.Command == "mine" || options.Command == "connect" || options.Command == "open")
-                    ^ !string.IsNullOrWhiteSpace(options.Data))
+                    invokedCommandInstance = subOptions;
+                }))
                 {
-                    Console.Out.WriteLine(options.GetUsage());
-                    return;
-                }
-
-                switch (options.Command)
-                {
-                    case "blockchain":
-                        Console.Out.WriteLine(blockchain.Dump());
-                        break;
-                    case "mine":
-                        StartMarquee();
-                        var newBlock = blockchain.Mine(options.Data);
-                        StopMarquee();
-                        Console.Out.WriteLine($"🎉  Congratulations!A new block was mined. 💎\n\n{newBlock.Dump()}\n");
-                        break;
-                    case "peers":
-                    case "connect":
-                    case "discover":
-                    case "open":
-                        Console.Out.WriteLine("Not implemented yet!");
-                        break;
-                    default:
-                        Console.Out.WriteLine(options.GetUsage());
-                        break;
+                    Console.Error.WriteLine($"Error parsing command line (wrong command for {invokedVerb})");
+                    Environment.Exit(Parser.DefaultExitCodeFail);
                 }
             }
+            else
+            {
+                Console.Error.WriteLine("Error parsing command line");
+                Environment.Exit(Parser.DefaultExitCodeFail);
+            }
+
+            switch (invokedVerb)
+            {
+                case "help":
+                    {
+                        Console.WriteLine($"{invokedVerb} {invokedVerbInstance.Dump() ?? "null"}");
+                    }
+                    break;
+
+                case "blockchain":
+                    {
+                        var subOptions = (BlockChainOptions)invokedVerbInstance;
+                        Console.WriteLine($">>> {subOptions.Connect?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Peers?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Discover?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Open?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Mine?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Show?.Dump() ?? "null"}");
+                        Console.WriteLine($"{invokedVerb} {subOptions.GetType().Name}");
+                    }
+                    break;
+                case "bitcoin":
+                    {
+                        var subOptions = (BitcoinOptions)invokedVerbInstance;
+                        Console.WriteLine($">>> {subOptions.Connect?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Peers?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Discover?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Open?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Mine?.Dump() ?? "null"}");
+                        Console.WriteLine($">>> {subOptions.Show?.Dump() ?? "null"}");
+                        Console.WriteLine($"{invokedVerb} {subOptions.GetType().Name}");
+                    }
+                    break;
+                default:
+                    Console.WriteLine($"{invokedVerb}!");
+                    break;
+            }
+
+            //if (options.Verbose) // && !string.IsNullOrWhiteSpace(verb))
+            //{
+            //Console.Out.WriteLine($"Running {verb} verb [{subOptions.GetType().Name}]\n");
+            //}
+
+            //if ((options.Command == "mine" || options.Command == "connect" || options.Command == "open")
+            //    ^ !string.IsNullOrWhiteSpace(options.Data))
+            //{
+            //    Console.Out.WriteLine(options.GetUsage());
+            //    return;
+            //}
+
+            //switch (options.Command)
+            //{
+            //    case "blockchain":
+            //        Console.Out.WriteLine(blockchain.Dump());
+            //        break;
+            //    case "mine":
+            //        StartMarquee();
+            //        var newBlock = blockchain.Mine(options.Data);
+            //        StopMarquee();
+            //        Console.Out.WriteLine($"🎉  Congratulations!A new block was mined. 💎\n\n{newBlock.Dump()}\n");
+            //        break;
+            //    case "peers":
+            //    case "connect":
+            //    case "discover":
+            //    case "open":
+            //        Console.Out.WriteLine("Not implemented yet!");
+            //        break;
+            //    default:
+            //        Console.Out.WriteLine(options.GetUsage());
+            //        break;
+            //}
         }
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

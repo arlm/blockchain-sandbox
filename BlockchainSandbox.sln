@@ -1,11 +1,13 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockChain.CLI", "BlockChain.CLI\BlockChain.CLI.csproj", "{5757D121-4302-4BFD-A729-4289DC268708}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockChain.Test", "BlockChain.Test\BlockChain.Test.csproj", "{4F2960A0-02FD-4736-B9A3-AD10EAE6BC4D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIPEMD160", "RIPEMD160\src\System.Security.Cryptography.Algorithms\src\RIPEMD160.csproj", "{F78D8879-59A9-46FE-BBAB-A1D593499B19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlockChain.CLI", "BlockChain.CLI\BlockChain.CLI.csproj", "{4B54782C-C4AB-413B-8B1B-45D3F349A07A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RIPEMD160", "RIPEMD160\src\System.Security.Cryptography.Algorithms\src\RIPEMD160.csproj", "{0A72A393-2913-45F9-A3D6-B246CFC3FDDB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5757D121-4302-4BFD-A729-4289DC268708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5757D121-4302-4BFD-A729-4289DC268708}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5757D121-4302-4BFD-A729-4289DC268708}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5757D121-4302-4BFD-A729-4289DC268708}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4F2960A0-02FD-4736-B9A3-AD10EAE6BC4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4F2960A0-02FD-4736-B9A3-AD10EAE6BC4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F2960A0-02FD-4736-B9A3-AD10EAE6BC4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -25,5 +23,13 @@ Global
 		{F78D8879-59A9-46FE-BBAB-A1D593499B19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F78D8879-59A9-46FE-BBAB-A1D593499B19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F78D8879-59A9-46FE-BBAB-A1D593499B19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B54782C-C4AB-413B-8B1B-45D3F349A07A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B54782C-C4AB-413B-8B1B-45D3F349A07A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B54782C-C4AB-413B-8B1B-45D3F349A07A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B54782C-C4AB-413B-8B1B-45D3F349A07A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A72A393-2913-45F9-A3D6-B246CFC3FDDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A72A393-2913-45F9-A3D6-B246CFC3FDDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A72A393-2913-45F9-A3D6-B246CFC3FDDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A72A393-2913-45F9-A3D6-B246CFC3FDDB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
