@@ -8,14 +8,20 @@ namespace BlockChain.CLI.Bitcoin
     {
         private const int CHECKSUM_SIZE = 4;
 
-        public byte[] PublicKey { get; private set; }
+        public PublicKey PublicKey { get; private set; }
         public string Base58Check { get; private set; }
+        public NetworkVersion.Type Type { get; private set; }
 
-        public Address(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public Address(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
         {
             PublicKey = publicKey;
-            Base58Check = CalculateAddress(publicKey, type);
+			Type = type;
+            Base58Check = Calculate(publicKey.Key, type);
         }
+
+        public Address(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+            : this(new PublicKey(publicKey), type)
+        { }
 
         public override string ToString()
         {
@@ -34,20 +40,20 @@ namespace BlockChain.CLI.Bitcoin
             if (object.ReferenceEquals(null, other))
                 return false;
 
-            return other.PublicKey.SequenceEqual(this.PublicKey);
+            return other.PublicKey == this.PublicKey;
         }
 
-        public static (bool, NetworkVersion.Type) VerifyAddress(string address)
+        public static (bool, NetworkVersion.Type) Verify(string address)
         {
             var data = address.DecodeBase58();
 
-            return VerifyAddress(data);
+            return Verify(data);
         }
 
-        public static (bool, NetworkVersion.Type) VerifyAddress(byte[] data)
+        public static (bool, NetworkVersion.Type) Verify(byte[] data)
         {
-            var address = ArrayHelpers.SubArray(data, 0, data.Length - CHECKSUM_SIZE);
-            var givenCheckSum = ArrayHelpers.SubArray(data, data.Length - CHECKSUM_SIZE);
+            var address = data.SubArray(0, data.Length - CHECKSUM_SIZE);
+            var givenCheckSum = data.SubArray(data.Length - CHECKSUM_SIZE);
 
             var sha256 = new SHA256Managed();
             var hash1 = sha256.ComputeHash(address);
@@ -59,27 +65,27 @@ namespace BlockChain.CLI.Bitcoin
             return (givenCheckSum.SequenceEqual(correctCheckSum), data.GetNetworkType());
         }
 
-        private static string CalculateAddress(byte[] publicKey, NetworkVersion.Type type)
+        private static string Calculate(byte[] publicKey, NetworkVersion.Type type)
         {
-            var result = InternalCalculateAddress(publicKey, type);
+            var result = InternalCalculate(publicKey, type);
             return result.Item8;
         }
 
-        internal static (byte[], byte[], byte[], byte[], byte[], byte[], byte[], string) InternalCalculateAddress(byte[] publicKey, NetworkVersion.Type type)
+        internal static (byte[], byte[], byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] publicKey, NetworkVersion.Type type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();
 
             var publicKeySha = sha256.ComputeHash(publicKey);
             var publicKeyShaRipe = ripeMD160.ComputeHash(publicKeySha);
-            var preHashNetwork = ArrayHelpers.ConcatArrays(type.GetPrefix(), publicKeyShaRipe);
+            var preHashNetwork = type.GetPrefix().Concat(publicKeyShaRipe);
             var publicHash = sha256.ComputeHash(preHashNetwork);
             var publicHash2x = sha256.ComputeHash(publicHash);
 
             var checksum = new byte[CHECKSUM_SIZE];
             Buffer.BlockCopy(publicHash2x, 0, checksum, 0, checksum.Length);
 
-            var address = ArrayHelpers.ConcatArrays(preHashNetwork, checksum);
+            var address = preHashNetwork.Concat(checksum);
             var base58Address = address.EncodeBase58();
 
             return (publicKeySha, publicKeyShaRipe, preHashNetwork, publicHash, publicHash2x, checksum, address, base58Address);

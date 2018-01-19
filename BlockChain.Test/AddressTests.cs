@@ -1,4 +1,5 @@
 ﻿using BlockChain.CLI.Bitcoin;
+using BlockChain.Core;
 using NUnit.Framework;
 
 namespace BlockChain.Test
@@ -15,7 +16,7 @@ namespace BlockChain.Test
         {
             (byte[] testPublicKeySha, byte[] testPublicKeyShaRipe, byte[] testPreHashNetwork,
              byte[] testPublicHash, byte[] testPublicHash2x, byte[] testChecksum,
-             byte[] testAddress, string testBase58Address) = Address.InternalCalculateAddress(publicKey.ToBytes(), type);
+             byte[] testAddress, string testBase58Address) = Address.InternalCalculate(publicKey.ToBytes(), type);
 
             Assert.AreEqual(publicKeySha.ToBytes(), testPublicKeySha, "Invalid Public Key SHA-256");
             Assert.AreEqual(publicKeyShaRipe.ToBytes(), testPublicKeyShaRipe, "Invalid Public Key Hash RipeMD160");
@@ -27,10 +28,11 @@ namespace BlockChain.Test
             Assert.AreEqual(base58Address, testBase58Address, "Invalid Public Base58Check Address");
 
             var addressObj = new Address(publicKey.ToBytes(), type);
-            Assert.AreEqual(publicKey.ToBytes(), addressObj.PublicKey);
+            Assert.AreEqual(publicKey.ToBytes(), addressObj.PublicKey.Key);
+            Assert.AreEqual(type, addressObj.Type);
             Assert.AreEqual(base58Address, addressObj.Base58Check);
 
-            (bool checksumOk, NetworkVersion.Type testType) = Address.VerifyAddress(base58Address);
+            (bool checksumOk, NetworkVersion.Type testType) = Address.Verify(base58Address);
             Assert.IsTrue(checksumOk);
             Assert.AreEqual(type, testType);
         }

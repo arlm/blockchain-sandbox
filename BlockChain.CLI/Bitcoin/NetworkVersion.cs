@@ -7,8 +7,8 @@ namespace BlockChain.CLI.Bitcoin
         // From https://en.bitcoin.it/wiki/List_of_address_prefixes
 
         private static readonly byte[] MainNetworkPubKey = { 0x00 };
-        private static readonly byte[] MainNetworkPrivKey = { 0x05 };
-        private static readonly byte[] MainNetworkScript = { 0x80 };
+        private static readonly byte[] MainNetworkPrivKey = { 0x80 };
+        private static readonly byte[] MainNetworkScript = { 0x05 };
         private static readonly byte[] TestNetworkPubKey = { 0x6F };
         private static readonly byte[] TestNetworkScript = { 0xC4 };
         private static readonly byte[] TestNetworkPrivKey = { 0xEF };

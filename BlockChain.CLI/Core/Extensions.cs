@@ -59,6 +59,28 @@ namespace BlockChain.Core
             return true;
         }
 
+        public static byte[] ToBytes(this string hexa)
+        {
+            if (string.IsNullOrWhiteSpace(hexa))
+            {
+                return new byte[] { };
+            }
+
+            if (hexa.Length % 2 != 0)
+            {
+                hexa = hexa.Insert(0, "0");
+            }
+
+            var result = new byte[hexa.Length / 2];
+
+            for (int index = 0; index < hexa.Length; index += 2)
+            {
+                result[index / 2] = byte.Parse(hexa.Substring(index, 2), System.Globalization.NumberStyles.HexNumber);
+            }
+
+            return result;
+        }
+
         public static string Dump(this byte[] bytes) => string.Join(string.Empty, bytes.Select(b => b.ToString("X2")));
 
         public static bool IsEqualsTo(this byte[] bytes1, byte[] bytes2)

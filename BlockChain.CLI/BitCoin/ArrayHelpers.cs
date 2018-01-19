@@ -26,7 +26,7 @@ namespace BlockChain.CLI.Bitcoin
             return result;
         }
 
-        public static T[] ConcatArrays<T>(T[] arr1, T[] arr2)
+        public static T[] Concat<T>(this T[] arr1, T[] arr2)
         {
             Contract.Requires(arr1 != null);
             Contract.Requires(arr2 != null);
@@ -39,7 +39,7 @@ namespace BlockChain.CLI.Bitcoin
             return result;
         }
 
-        public static T[] SubArray<T>(T[] arr, int start, int length)
+        public static T[] SubArray<T>(this T[] arr, int start, int length)
         {
             Contract.Requires(arr != null);
             Contract.Requires(start >= 0);
@@ -53,7 +53,7 @@ namespace BlockChain.CLI.Bitcoin
             return result;
         }
 
-        public static T[] SubArray<T>(T[] arr, int start)
+        public static T[] SubArray<T>(this T[] arr, int start)
         {
             Contract.Requires(arr != null);
             Contract.Requires(start >= 0);

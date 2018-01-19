@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using BlockChain.CLI.Bitcoin;
+using BlockChain.Core;
 using NUnit.Framework;
 
 namespace BlockChain.Test
@@ -128,9 +129,22 @@ namespace BlockChain.Test
             new object[] {(uint)299542347, "TUEWE"}
         };
 
-        // Data From: https://github.com/ThePiachu/Bitcoin-Unit-Tests/blob/master/Address/Address%20Generation%20Test%201.txt
         private static object[] Base58TestData =
         {
+            // Data From: https://github.com/bitcoin/bitcoin/blob/master/src/test/data/base58_encode_decode.json
+            new object[] {"61".ToBytes(), "2g"},
+            new object[] {"626262".ToBytes(), "a3gV"},
+            new object[] {"636363".ToBytes(), "aPEr"},
+            new object[] {"73696d706c792061206c6f6e6720737472696e67".ToBytes(), "2cFupjhnEsSn59qHXstmK2ffpLv2"},
+            new object[] {"00eb15231dfceb60925886b67d065299925915aeb172c06647".ToBytes(), "1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"},
+            new object[] {"516b6fcd0f".ToBytes(), "ABnLTmg"},
+            new object[] {"bf4f89001e670274dd".ToBytes(), "3SEo3LWLoPntC"},
+            new object[] {"572e4794".ToBytes(), "3EFU7m"},
+            new object[] {"ecac89cad93923c02321".ToBytes(), "EJDM8drfXA6uyA"},
+            new object[] {"10c8511e".ToBytes(), "Rt5zm"},
+            new object[] {"00000000000000000000".ToBytes(), "1111111111"},
+
+			// Data From: https://github.com/ThePiachu/Bitcoin-Unit-Tests/blob/master/Address/Address%20Generation%20Test%201.txt
             new object[] {"00010966776006953D5567439E5E39F86A0D273BEED61967F6".ToBytes(), "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"},
             new object[] {"003A91CC0AF51BE125369A25FAC9CE5A950EF491AB06B2C8FB".ToBytes(), "16LgrHNVKbrySfS97wegnWWA5P8fb62FQN"},
             new object[] {"00714076A39428B9B904F4007DCD1519EF97B8784775C992F5".ToBytes(), "1BKpag8kykZNTxR2mw5qTEwUwmZX71c3JU"},
