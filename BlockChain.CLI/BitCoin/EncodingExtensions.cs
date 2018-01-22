@@ -98,7 +98,7 @@ namespace BlockChain.CLI.Bitcoin
                 int carry = plainText[begin];
                 int tempLength = 0;
 
-                for (int pointer = b58.Length - 1; (carry != 0 || tempLength < length) && (pointer > 0); pointer--, tempLength++)
+                for (int pointer = b58.Length - 1; (carry != 0 || tempLength < length) && (pointer >= 0); pointer--, tempLength++)
                 {
                     carry += 256 * b58[pointer];
                     b58[pointer] = (byte)(carry % 58);
@@ -148,7 +148,7 @@ namespace BlockChain.CLI.Bitcoin
 
             int zeroes = 0;
 
-            while (encodedData[begin] == '1')
+            while (begin != encodedData.Length && encodedData[begin] == '1')
             {
                 zeroes++;
                 begin++;
