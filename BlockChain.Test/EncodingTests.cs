@@ -102,6 +102,13 @@ namespace BlockChain.Test
         }
 
         [Test, Category("Base58")]
+        [TestCaseSource("Base58DecodeData")]
+        public void Base58Decoding(string encodedData, byte[] plainText)
+        {
+            Assert.AreEqual(plainText, encodedData.DecodeBase58());
+        }
+
+        [Test, Category("Base58")]
         [TestCaseSource("Base58TestData")]
         public void Base58Encoding(byte[] plainText, string encodedData)
         {
@@ -129,20 +136,26 @@ namespace BlockChain.Test
             new object[] {(uint)299542347, "TUEWE"}
         };
 
+        private static object[] Base58DecodeData =
+        {
+            // Data From: https://github.com/bitcoin/bitcoin/blob/master/src/test/base58_tests.cpp#L69-L73
+            new object[] {" \t\n\v\f\r skip \r\f\v\n\t ", "971a55".ToBytes()},
+        };
+
         private static object[] Base58TestData =
         {
             // Data From: https://github.com/bitcoin/bitcoin/blob/master/src/test/data/base58_encode_decode.json
             new object[] {"61".ToBytes(), "2g"},
             new object[] {"626262".ToBytes(), "a3gV"},
             new object[] {"636363".ToBytes(), "aPEr"},
-            new object[] {"73696d706c792061206c6f6e6720737472696e67".ToBytes(), "2cFupjhnEsSn59qHXstmK2ffpLv2"}, // Fix
+            new object[] {"73696d706c792061206c6f6e6720737472696e67".ToBytes(), "2cFupjhnEsSn59qHXstmK2ffpLv2"},
             new object[] {"00eb15231dfceb60925886b67d065299925915aeb172c06647".ToBytes(), "1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"},
-            new object[] {"516b6fcd0f".ToBytes(), "ABnLTmg"}, // Fix
-            new object[] {"bf4f89001e670274dd".ToBytes(), "3SEo3LWLoPntC"}, // Fix
-            new object[] {"572e4794".ToBytes(), "3EFU7m"}, // Fix
-            new object[] {"ecac89cad93923c02321".ToBytes(), "EJDM8drfXA6uyA"}, // Fix
+            new object[] {"516b6fcd0f".ToBytes(), "ABnLTmg"},
+            new object[] {"bf4f89001e670274dd".ToBytes(), "3SEo3LWLoPntC"},
+            new object[] {"572e4794".ToBytes(), "3EFU7m"},
+            new object[] {"ecac89cad93923c02321".ToBytes(), "EJDM8drfXA6uyA"},
             new object[] {"10c8511e".ToBytes(), "Rt5zm"},
-            new object[] {"00000000000000000000".ToBytes(), "1111111111"}, // Fix
+            new object[] {"00000000000000000000".ToBytes(), "1111111111"},
 
 			// Data From: https://github.com/ThePiachu/Bitcoin-Unit-Tests/blob/master/Address/Address%20Generation%20Test%201.txt
             new object[] {"00010966776006953D5567439E5E39F86A0D273BEED61967F6".ToBytes(), "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"},

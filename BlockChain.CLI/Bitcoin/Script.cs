@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Address
+    public class Script
     {
         private const int CHECKSUM_SIZE = 4;
         private const int ADDRESS_SIZE = 20; // RIPEMD-160 hash size
@@ -13,7 +13,7 @@ namespace BlockChain.CLI.Bitcoin
         public string Base58Check { get; private set; }
         public NetworkVersion.Type Type { get; private set; }
 
-        public Address(string wifWallet)
+        public Script(string wifWallet)
         {
             (var publicKey, var type, _) = Extract(wifWallet);
 
@@ -22,14 +22,14 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public Address(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public Script(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkScript)
         {
             PublicKey = publicKey;
-			Type = type;
+            Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
 
-        public Address(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public Script(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkScript)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -64,7 +64,7 @@ namespace BlockChain.CLI.Bitcoin
         {
             if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
                 return (false, NetworkVersion.Type.Unknown);
-            
+
             var address = data.SubArray(0, data.Length - CHECKSUM_SIZE);
             var givenChecksum = data.SubArray(data.Length - CHECKSUM_SIZE);
             var type = data.GetNetworkType();
@@ -79,7 +79,7 @@ namespace BlockChain.CLI.Bitcoin
 
             bool properSize = address.Length - prefix.Length == ADDRESS_SIZE;
             bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type == NetworkVersion.Type.MainNetworkPubKey || type == NetworkVersion.Type.TestNetworkPubKey;
+            bool validType = type == NetworkVersion.Type.MainNetworkScript || type == NetworkVersion.Type.TestNetworkScript;
 
             return (properSize && validChecksum && validType, type);
         }

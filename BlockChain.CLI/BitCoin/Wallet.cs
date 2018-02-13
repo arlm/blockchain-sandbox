@@ -7,11 +7,12 @@ namespace BlockChain.CLI.Bitcoin
     public class Wallet
     {
         private const int CHECKSUM_SIZE = 4;
+        private const int WALLET_SIZE = 32; // SHA-256 hash size
         private static readonly byte[] COMPRESSED_PUB_KEY_SUFFIX = { 0x01 };
 
         public PrivateKey PrivateKey { get; private set; }
         public string Base58Check { get; private set; }
-        public bool CompressedPubKey { get; private set; }
+        public bool IsCompressed { get; private set; }
         public NetworkVersion.Type Type { get; private set; }
 
         public Wallet(string wifWallet)
@@ -20,15 +21,23 @@ namespace BlockChain.CLI.Bitcoin
 
             PrivateKey = new PrivateKey(privateKey);
             Type = type;
-            CompressedPubKey = compressedPubKey;
+            IsCompressed = compressedPubKey;
             Base58Check = wifWallet;
         }
 
         public Wallet(PrivateKey privateKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPrivKey, bool compressedPubKey = false)
         {
-            PrivateKey = privateKey;
+            if (compressedPubKey)
+            {
+                PrivateKey = privateKey;
+            }
+            else
+            {
+                PrivateKey = privateKey;
+            }
+
 			Type = type;
-			CompressedPubKey = compressedPubKey;
+			IsCompressed = compressedPubKey;
             Base58Check = Calculate(privateKey.Key, type, compressedPubKey);
         }
 
@@ -65,17 +74,32 @@ namespace BlockChain.CLI.Bitcoin
 
         public static (bool, NetworkVersion.Type) Verify(byte[] data)
         {
-            var address = data.SubArray(0, data.Length - CHECKSUM_SIZE);
-            var givenChecksum = data.SubArray(data.Length - CHECKSUM_SIZE);
+            if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
+                return (false, NetworkVersion.Type.Unknown);
+            
+            var checksumStart = data.Length - CHECKSUM_SIZE;
+            var wallet = data.SubArray(0, checksumStart);
+            var givenChecksum = data.SubArray(checksumStart);
+            var type = data.GetNetworkType();
+            var prefix = type.GetPrefix();
 
             var sha256 = new SHA256Managed();
-            var hash1 = sha256.ComputeHash(address);
+            var hash1 = sha256.ComputeHash(wallet);
             var hash2 = sha256.ComputeHash(hash1);
 
             var correctChecksum = new byte[CHECKSUM_SIZE];
             Buffer.BlockCopy(hash2, 0, correctChecksum, 0, correctChecksum.Length);
 
-            return (givenChecksum.SequenceEqual(correctChecksum), data.GetNetworkType());
+            var privKeySize = wallet.Length - prefix.Length;
+            var endsWith0x01 = wallet[checksumStart - 1] == COMPRESSED_PUB_KEY_SUFFIX[0];
+            var expectedSize = endsWith0x01 ? privKeySize - 1 == WALLET_SIZE : privKeySize == WALLET_SIZE;
+
+            var isCompressed = endsWith0x01 && expectedSize;
+            var properSize = isCompressed ? privKeySize  - 1 == WALLET_SIZE : privKeySize == WALLET_SIZE;
+            var validChecksum = givenChecksum.SequenceEqual(correctChecksum);
+            var validType = type == NetworkVersion.Type.MainNetworkPrivKey || type == NetworkVersion.Type.TestNetworkPrivKey;
+
+            return (properSize && validChecksum && validType, type);
         }
 
         private static string Calculate(byte[] privateKey, NetworkVersion.Type type, bool compressedPubKey)
@@ -114,11 +138,19 @@ namespace BlockChain.CLI.Bitcoin
         {
             var wallet = wifWallet.DecodeBase58();
             var type = wallet.GetNetworkType();
-            var checksumStart = wallet.Length - 4;
-            var checksum = wallet.SubArray(checksumStart, 4);
-            var privateKey = wallet.SubArray(1, checksumStart - 1);
+            var prefix = type.GetPrefix();
 
-            return (privateKey, type, checksum, privateKey[privateKey.Length - 1] == COMPRESSED_PUB_KEY_SUFFIX[0]);
+            var checksumStart = wallet.Length - CHECKSUM_SIZE;
+            var checksum = wallet.SubArray(checksumStart, CHECKSUM_SIZE);
+
+            var endsWith0x01 = wallet[checksumStart - 1] == COMPRESSED_PUB_KEY_SUFFIX[0];
+            int privKeySize = wallet.Length - prefix.Length - CHECKSUM_SIZE;
+            var expectedSize = endsWith0x01 ? privKeySize - 1 == WALLET_SIZE : privKeySize == WALLET_SIZE;
+            var isCompressed = endsWith0x01 && expectedSize;
+
+            var privateKey = wallet.SubArray(1, checksumStart - (isCompressed ? 2 : 1));
+
+            return (privateKey, type, checksum, isCompressed);
         }
     }
 }

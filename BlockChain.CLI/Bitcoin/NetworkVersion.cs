@@ -6,9 +6,10 @@ namespace BlockChain.CLI.Bitcoin
     {
         // From https://en.bitcoin.it/wiki/List_of_address_prefixes
 
+        private static readonly byte[] Unknown = { 0xFF };
         private static readonly byte[] MainNetworkPubKey = { 0x00 };
+		private static readonly byte[] MainNetworkScript = { 0x05 };
         private static readonly byte[] MainNetworkPrivKey = { 0x80 };
-        private static readonly byte[] MainNetworkScript = { 0x05 };
         private static readonly byte[] TestNetworkPubKey = { 0x6F };
         private static readonly byte[] TestNetworkScript = { 0xC4 };
         private static readonly byte[] TestNetworkPrivKey = { 0xEF };
@@ -16,6 +17,10 @@ namespace BlockChain.CLI.Bitcoin
         private static readonly byte[] MainNetworkBip32PrivKey = { 0x04, 0x88, 0xAD, 0xE4 };
         private static readonly byte[] TestNetworkBip32PubKey = { 0x04, 0x35, 0x87, 0xCF };
         private static readonly byte[] TestNetworkBip32PrivKey = { 0x04, 0x35, 0x83, 0x94 };
+        private static readonly byte[] MainNetworkWitnessPubKey = { 0x06 };
+        private static readonly byte[] MainNetworkWitnessScript = { 0x0A };
+        private static readonly byte[] TestNetworkWitnessPubKey = { 0x03 };
+        private static readonly byte[] TestNetworkWitnessScript = { 0x28 };
 
         public enum Type
         {
@@ -29,7 +34,11 @@ namespace BlockChain.CLI.Bitcoin
             MainNetworkBip32PubKey,
             MainNetworkBip32PrivKey,
             TestNetworkBip32PubKey,
-            TestNetworkBip32PrivKey
+            TestNetworkBip32PrivKey,
+            MainNetworkWitnessPubKey,
+            MainNetworkWitnessScript,
+            TestNetworkWitnessPubKey,
+            TestNetworkWitnessScript
         }
 
         public static byte[] GetPrefix(this Type type)
@@ -56,6 +65,14 @@ namespace BlockChain.CLI.Bitcoin
                     return TestNetworkBip32PubKey;
                 case Type.TestNetworkBip32PrivKey:
                     return TestNetworkBip32PrivKey;
+                case Type.MainNetworkWitnessPubKey:
+                    return MainNetworkWitnessPubKey;
+                case Type.MainNetworkWitnessScript:
+                    return MainNetworkWitnessScript;
+                case Type.TestNetworkWitnessPubKey:
+                    return TestNetworkWitnessPubKey;
+                case Type.TestNetworkWitnessScript:
+                    return TestNetworkWitnessScript;
                 default:
                     return new byte[] { };
             }
@@ -69,16 +86,8 @@ namespace BlockChain.CLI.Bitcoin
             {
                 case 0x00:
                     return Type.MainNetworkPubKey;
-                case 0x80:
-                    return Type.MainNetworkPrivKey;
-                case 0x05:
-                    return Type.MainNetworkScript;
-                case 0x6F:
-                    return Type.TestNetworkPubKey;
-                case 0xC4:
-                    return Type.TestNetworkScript;
-                case 0xEF:
-                    return Type.TestNetworkPrivKey;
+                case 0x03:
+                    return Type.TestNetworkWitnessPubKey;
                 case 0x04:
                     {
                         var header = ArrayHelpers.SubArray(address, 4);
@@ -93,6 +102,22 @@ namespace BlockChain.CLI.Bitcoin
                             return Type.TestNetworkBip32PrivKey;
                     }
                     return Type.Unknown;
+				case 0x05:
+					return Type.MainNetworkScript;
+                case 0x06:
+                    return Type.MainNetworkWitnessPubKey;
+                case 0x0A:
+                    return Type.MainNetworkWitnessScript;
+                case 0x28:
+                    return Type.TestNetworkWitnessScript;
+				case 0x6F:
+					return Type.TestNetworkPubKey;
+                case 0x80:
+                    return Type.MainNetworkPrivKey;
+				case 0xC4:
+                    return Type.TestNetworkScript;
+                case 0xEF:
+                    return Type.TestNetworkPrivKey;
                 default:
                     return Type.Unknown;
             }
