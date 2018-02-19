@@ -48,7 +48,7 @@ namespace BlockChain.Test
         [TestCaseSource("InvalidKeysData")]
         public void InvalidKeys(string key)
         {
-            (var isAddress, var addressType) = Address.Verify(key);
+            (var isAddress, var addressType) = PublicAddress.Verify(key);
             (var isWallet, var walletType) = Wallet.Verify(key);
 
             Assert.IsFalse(isAddress && (NetworkVersion.Type.Unknown != addressType), "This address should be invalid");
@@ -73,7 +73,7 @@ namespace BlockChain.Test
                 Assert.AreEqual(bytes.Length, wallet.PrivateKey.Key.Length, "Key length mismatch");
                 Assert.AreEqual(bytes, wallet.PrivateKey.Key, "Key content mismatch");
 
-                (isValid, detectedType) = Address.Verify(base58Check);
+                (isValid, detectedType) = PublicAddress.Verify(base58Check);
                 Assert.IsFalse(isValid, "Public Key should not be valid");
 
                 wallet = new Wallet(bytes, type, isCompressed);
@@ -81,14 +81,14 @@ namespace BlockChain.Test
             }
             else
             {
-                (var isAddressValid, var detectedAddressType) = Address.Verify(base58Check);
+                (var isAddressValid, var detectedAddressType) = PublicAddress.Verify(base58Check);
                 (var isScriptValid, var detectedScriptType) = Script.Verify(base58Check);
 
                 if (tryCaseFlip)
                 {
                     var flipped = FlipCase(base58Check);
 
-                    (var isValidFlippedAddress, var detectedTypeFlippedAddress) = Address.Verify(flipped);
+                    (var isValidFlippedAddress, var detectedTypeFlippedAddress) = PublicAddress.Verify(flipped);
                     (var isValidFlippedScript, var detectedTypeFlippedScript) = Script.Verify(flipped);
                     isAddressValid |= isValidFlippedAddress;
                     isScriptValid |= isValidFlippedScript;
@@ -99,7 +99,7 @@ namespace BlockChain.Test
                 (isAddressValid, detectedAddressType) = Wallet.Verify(base58Check);
                 Assert.IsFalse(isAddressValid, "Private Key should not be valid");
 
-                var address = new Address(bytes, type);
+                var address = new PublicAddress(bytes, type);
                 Assert.AreEqual(base58Check, address.Base58Check);
             }
         }

@@ -1,7 +1,7 @@
 ﻿using System;
-namespace BlockChain.CLI.Bitcoin
+namespace BlockChain.CLI.Core
 {
-    public class PublicKey
+    public class PublicKey : IKey
     {
         public byte[] Key { get; private set; }
 
@@ -9,7 +9,6 @@ namespace BlockChain.CLI.Bitcoin
         {
             
         }
-
 
         public PublicKey(byte[] publicKey)
         {

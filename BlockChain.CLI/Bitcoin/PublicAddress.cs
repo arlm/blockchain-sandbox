@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
+using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Address
+    public class PublicAddress
     {
         private const int CHECKSUM_SIZE = 4;
         private const int ADDRESS_SIZE = 20; // RIPEMD-160 hash size
@@ -13,7 +14,7 @@ namespace BlockChain.CLI.Bitcoin
         public string Base58Check { get; private set; }
         public NetworkVersion.Type Type { get; private set; }
 
-        public Address(string wifWallet)
+        public PublicAddress(string wifWallet)
         {
             (var publicKey, var type, _) = Extract(wifWallet);
 
@@ -22,14 +23,14 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public Address(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public PublicAddress(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
         {
             PublicKey = publicKey;
 			Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
 
-        public Address(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public PublicAddress(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -45,7 +46,7 @@ namespace BlockChain.CLI.Bitcoin
 
         public override bool Equals(object obj)
         {
-            var other = obj as Address;
+            var other = obj as PublicAddress;
 
             if (object.ReferenceEquals(null, other))
                 return false;

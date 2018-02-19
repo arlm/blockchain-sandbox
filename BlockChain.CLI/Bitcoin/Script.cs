@@ -1,30 +1,74 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
+using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Script
+    public class Script : AddressBase<NetworkVersion.Type>
     {
-        private const int CHECKSUM_SIZE = 4;
-        private const int ADDRESS_SIZE = 20; // RIPEMD-160 hash size
+        static Script()
+        {
+			// RIPEMD-160 hash size
+            AddressSize = 20;
 
-        public PublicKey PublicKey { get; private set; }
-        public string Base58Check { get; private set; }
-        public NetworkVersion.Type Type { get; private set; }
+            VerifyFunction = HandleVerificationDelegate;
+            ExtractFunction = HandleExtractDelegate;
+            CalculateFunction = HandleCalculateDelegate;
+        }
+
+        static (bool IsValid, NetworkVersion.Type Type) HandleVerificationDelegate(byte[] data)
+        {
+            if ((data?.Length ?? 0) <= ChecksumSize)
+                return (false, NetworkVersion.Type.Unknown);
+
+            var address = data.SubArray(0, data.Length - ChecksumSize);
+            var givenChecksum = data.SubArray(data.Length - ChecksumSize);
+            var type = data.GetNetworkType();
+            var prefix = type.GetPrefix();
+
+            var sha256 = new SHA256Managed();
+            var hash1 = sha256.ComputeHash(address);
+            var hash2 = sha256.ComputeHash(hash1);
+
+            var correctChecksum = new byte[ChecksumSize];
+            Buffer.BlockCopy(hash2, 0, correctChecksum, 0, correctChecksum.Length);
+
+            bool properSize = address.Length - prefix.Length == AddressSize;
+            bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
+            bool validType = type == NetworkVersion.Type.MainNetworkScript || type == NetworkVersion.Type.TestNetworkScript;
+
+            return (properSize && validChecksum && validType, type);
+        }
+
+        static (byte[] Key, NetworkVersion.Type Type, byte[] Checksum) HandleExtractDelegate(byte[] data)
+        {
+            var type = data.GetNetworkType();
+            var checksumStart = data.Length - ChecksumSize;
+            var checksum = data.SubArray(checksumStart, ChecksumSize);
+            var privateKey = data.SubArray(1, checksumStart - 1);
+
+            return (privateKey, type, checksum);
+        }
+
+        static string HandleCalculateDelegate(byte[] key, NetworkVersion.Type type)
+        {
+            var result = InternalCalculate(key, type);
+            return result.base58Address;
+        }
 
         public Script(string wifWallet)
         {
             (var publicKey, var type, _) = Extract(wifWallet);
 
-            PublicKey = new PublicKey(publicKey);
+            Key = new PublicKey(publicKey);
             Type = type;
             Base58Check = wifWallet;
         }
 
         public Script(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkScript)
         {
-            PublicKey = publicKey;
+            Key = publicKey;
             Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
@@ -45,52 +89,15 @@ namespace BlockChain.CLI.Bitcoin
 
         public override bool Equals(object obj)
         {
-            var other = obj as Address;
+            var other = obj as Script;
 
             if (object.ReferenceEquals(null, other))
                 return false;
 
-            return other.PublicKey == this.PublicKey;
+            return other.Key == this.Key;
         }
 
-        public static (bool, NetworkVersion.Type) Verify(string address)
-        {
-            var data = address.DecodeBase58();
-
-            return Verify(data);
-        }
-
-        public static (bool, NetworkVersion.Type) Verify(byte[] data)
-        {
-            if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
-                return (false, NetworkVersion.Type.Unknown);
-
-            var address = data.SubArray(0, data.Length - CHECKSUM_SIZE);
-            var givenChecksum = data.SubArray(data.Length - CHECKSUM_SIZE);
-            var type = data.GetNetworkType();
-            var prefix = type.GetPrefix();
-
-            var sha256 = new SHA256Managed();
-            var hash1 = sha256.ComputeHash(address);
-            var hash2 = sha256.ComputeHash(hash1);
-
-            var correctChecksum = new byte[CHECKSUM_SIZE];
-            Buffer.BlockCopy(hash2, 0, correctChecksum, 0, correctChecksum.Length);
-
-            bool properSize = address.Length - prefix.Length == ADDRESS_SIZE;
-            bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type == NetworkVersion.Type.MainNetworkScript || type == NetworkVersion.Type.TestNetworkScript;
-
-            return (properSize && validChecksum && validType, type);
-        }
-
-        private static string Calculate(byte[] publicKey, NetworkVersion.Type type)
-        {
-            var result = InternalCalculate(publicKey, type);
-            return result.Item8;
-        }
-
-        internal static (byte[], byte[], byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] publicKey, NetworkVersion.Type type)
+        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, NetworkVersion.Type type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();
@@ -101,24 +108,13 @@ namespace BlockChain.CLI.Bitcoin
             var publicHash = sha256.ComputeHash(preHashNetwork);
             var publicHash2x = sha256.ComputeHash(publicHash);
 
-            var checksum = new byte[CHECKSUM_SIZE];
+            var checksum = new byte[ChecksumSize];
             Buffer.BlockCopy(publicHash2x, 0, checksum, 0, checksum.Length);
 
             var address = preHashNetwork.Concat(checksum);
             var base58Address = address.EncodeBase58();
 
             return (publicKeySha, publicKeyShaRipe, preHashNetwork, publicHash, publicHash2x, checksum, address, base58Address);
-        }
-
-        internal static (byte[], NetworkVersion.Type, byte[]) Extract(string wifWallet)
-        {
-            var wallet = wifWallet.DecodeBase58();
-            var type = wallet.GetNetworkType();
-            var checksumStart = wallet.Length - CHECKSUM_SIZE;
-            var checksum = wallet.SubArray(checksumStart, CHECKSUM_SIZE);
-            var privateKey = wallet.SubArray(1, checksumStart - 1);
-
-            return (privateKey, type, checksum);
         }
     }
 }

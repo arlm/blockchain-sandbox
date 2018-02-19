@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using BlockChain.CLI.Core;
 using BlockChain.Core;
 
 namespace BlockChain.CLI.Bitcoin

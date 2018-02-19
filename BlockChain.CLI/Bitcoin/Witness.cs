@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
+using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
@@ -45,7 +46,7 @@ namespace BlockChain.CLI.Bitcoin
 
         public override bool Equals(object obj)
         {
-            var other = obj as Address;
+            var other = obj as PublicAddress;
 
             if (object.ReferenceEquals(null, other))
                 return false;
