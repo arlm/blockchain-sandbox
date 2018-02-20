@@ -4,16 +4,16 @@ using BlockChain.CLI.Bitcoin;
 namespace BlockChain.CLI.Core
 {
     public delegate (bool IsValid, TEnum Type) VerificationDelegate<TEnum>(byte[] data)
-        where TEnum : struct, IComparable, IFormattable, IConvertible;
+        where TEnum : struct, IComparable;
 
     public delegate string CalculateDelegate<TEnum>(byte[] key, TEnum type)
-        where TEnum : struct, IComparable, IFormattable, IConvertible;
+        where TEnum : struct, IComparable;
 
     public delegate (byte[] Key, TEnum Type, byte[] Checksum) ExtractDelegate<TEnum>(byte[] data)
-        where TEnum : struct, IComparable, IFormattable, IConvertible;
+        where TEnum : struct, IComparable;
 
     public abstract class AddressBase<TEnum> : IAddress<TEnum>
-        where TEnum : struct, IComparable, IFormattable, IConvertible
+        where TEnum : struct, IComparable
     {
         public IKey Key { get; protected set; }
         public string Base58Check { get; protected set; }

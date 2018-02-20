@@ -12,7 +12,7 @@ namespace BlockChain.CLI.Bitcoin
 
         public PublicKey PublicKey { get; private set; }
         public string Base58Check { get; private set; }
-        public NetworkVersion.Type Type { get; private set; }
+        public (NetworkVersion.Type, NetworkVersion.Network) Type { get; private set; }
 
         public PublicAddress(string wifWallet)
         {
@@ -23,14 +23,14 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public PublicAddress(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public PublicAddress(PublicKey publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             PublicKey = publicKey;
 			Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
 
-        public PublicAddress(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPubKey)
+        public PublicAddress(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -54,21 +54,21 @@ namespace BlockChain.CLI.Bitcoin
             return other.PublicKey == this.PublicKey;
         }
 
-        public static (bool, NetworkVersion.Type) Verify(string address)
+        public static (bool, NetworkVersion.Network) Verify(string address)
         {
             var data = address.DecodeBase58();
 
             return Verify(data);
         }
 
-        public static (bool, NetworkVersion.Type) Verify(byte[] data)
+        public static (bool, NetworkVersion.Network) Verify(byte[] data)
         {
             if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
-                return (false, NetworkVersion.Type.Unknown);
+                return (false, NetworkVersion.Network.Unknown);
             
             var address = data.SubArray(0, data.Length - CHECKSUM_SIZE);
             var givenChecksum = data.SubArray(data.Length - CHECKSUM_SIZE);
-            var type = data.GetNetworkType();
+            var type = data.GetNetworkVersion();
             var prefix = type.GetPrefix();
 
             var sha256 = new SHA256Managed();
@@ -80,18 +80,18 @@ namespace BlockChain.CLI.Bitcoin
 
             bool properSize = address.Length - prefix.Length == ADDRESS_SIZE;
             bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type == NetworkVersion.Type.MainNetworkPubKey || type == NetworkVersion.Type.TestNetworkPubKey;
+            bool validType = type.type == NetworkVersion.Type.PublicKey;
 
-            return (properSize && validChecksum && validType, type);
+            return (properSize && validChecksum && validType, type.network);
         }
 
-        private static string Calculate(byte[] publicKey, NetworkVersion.Type type)
+        private static string Calculate(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             var result = InternalCalculate(publicKey, type);
             return result.Item8;
         }
 
-        internal static (byte[], byte[], byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] publicKey, NetworkVersion.Type type)
+        internal static (byte[], byte[], byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();
@@ -111,10 +111,10 @@ namespace BlockChain.CLI.Bitcoin
             return (publicKeySha, publicKeyShaRipe, preHashNetwork, publicHash, publicHash2x, checksum, address, base58Address);
         }
 
-        internal static (byte[], NetworkVersion.Type, byte[]) Extract(string wifWallet)
+        internal static (byte[], (NetworkVersion.Type, NetworkVersion.Network), byte[]) Extract(string wifWallet)
         {
             var wallet = wifWallet.DecodeBase58();
-            var type = wallet.GetNetworkType();
+            var type = wallet.GetNetworkVersion();
             var checksumStart = wallet.Length - CHECKSUM_SIZE;
             var checksum = wallet.SubArray(checksumStart, CHECKSUM_SIZE);
             var privateKey = wallet.SubArray(1, checksumStart - 1);

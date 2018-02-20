@@ -8,7 +8,7 @@ namespace BlockChain.CLI.Bitcoin
 
         private static readonly byte[] Unknown = { 0xFF };
         private static readonly byte[] MainNetworkPubKey = { 0x00 };
-		private static readonly byte[] MainNetworkScript = { 0x05 };
+        private static readonly byte[] MainNetworkScript = { 0x05 };
         private static readonly byte[] MainNetworkPrivKey = { 0x80 };
         private static readonly byte[] TestNetworkPubKey = { 0x6F };
         private static readonly byte[] TestNetworkScript = { 0xC4 };
@@ -25,101 +25,114 @@ namespace BlockChain.CLI.Bitcoin
         public enum Type
         {
             Unknown = -1,
-            MainNetworkPubKey,
-            MainNetworkPrivKey,
-            MainNetworkScript,
-            TestNetworkPubKey,
-            TestNetworkScript,
-            TestNetworkPrivKey,
-            MainNetworkBip32PubKey,
-            MainNetworkBip32PrivKey,
-            TestNetworkBip32PubKey,
-            TestNetworkBip32PrivKey,
-            MainNetworkWitnessPubKey,
-            MainNetworkWitnessScript,
-            TestNetworkWitnessPubKey,
-            TestNetworkWitnessScript
+            PublicKey,
+            PrivateKey,
+            Script,
+            Bip32PublicKey,
+            Bip32PrivateKey,
+            WitnessPublicKey,
+            WitnessScript
         }
 
-        public static byte[] GetPrefix(this Type type)
+        public enum Network
         {
-            switch (type)
+            Unknown = -1,
+            Main,
+            Test,
+            SegNet = Test
+        }
+
+        public static byte[] GetPrefix(this (Type type, Network network) type)
+        {
+            switch (type.network)
             {
-                case Type.MainNetworkPubKey:
-                    return MainNetworkPubKey;
-                case Type.MainNetworkPrivKey:
-                    return MainNetworkPrivKey;
-                case Type.MainNetworkScript:
-                    return MainNetworkScript;
-                case Type.TestNetworkPubKey:
-                    return TestNetworkPubKey;
-                case Type.TestNetworkScript:
-                    return TestNetworkScript;
-                case Type.TestNetworkPrivKey:
-                    return TestNetworkPrivKey;
-                case Type.MainNetworkBip32PubKey:
-                    return MainNetworkBip32PubKey;
-                case Type.MainNetworkBip32PrivKey:
-                    return MainNetworkBip32PrivKey;
-                case Type.TestNetworkBip32PubKey:
-                    return TestNetworkBip32PubKey;
-                case Type.TestNetworkBip32PrivKey:
-                    return TestNetworkBip32PrivKey;
-                case Type.MainNetworkWitnessPubKey:
-                    return MainNetworkWitnessPubKey;
-                case Type.MainNetworkWitnessScript:
-                    return MainNetworkWitnessScript;
-                case Type.TestNetworkWitnessPubKey:
-                    return TestNetworkWitnessPubKey;
-                case Type.TestNetworkWitnessScript:
-                    return TestNetworkWitnessScript;
+                case Network.Main:
+                    switch (type.type)
+                    {
+                        case Type.PublicKey:
+                            return MainNetworkPubKey;
+                        case Type.PrivateKey:
+                            return MainNetworkPrivKey;
+                        case Type.Script:
+                            return MainNetworkScript;
+                        case Type.Bip32PublicKey:
+                            return MainNetworkBip32PubKey;
+                        case Type.Bip32PrivateKey:
+                            return MainNetworkBip32PrivKey;
+                        case Type.WitnessPublicKey:
+                            return MainNetworkWitnessPubKey;
+                        case Type.WitnessScript:
+                            return MainNetworkWitnessScript;
+                        default:
+                            return new byte[] { };
+                    }
+                case Network.Test:
+                    switch (type.type)
+                    {
+                        case Type.PublicKey:
+                            return TestNetworkPubKey;
+                        case Type.PrivateKey:
+                            return TestNetworkPrivKey;
+                        case Type.Script:
+                            return TestNetworkScript;
+                        case Type.Bip32PublicKey:
+                            return TestNetworkBip32PubKey;
+                        case Type.Bip32PrivateKey:
+                            return TestNetworkBip32PrivKey;
+                        case Type.WitnessPublicKey:
+                            return TestNetworkWitnessPubKey;
+                        case Type.WitnessScript:
+                            return TestNetworkWitnessScript;
+                        default:
+                            return new byte[] { };
+                    }
                 default:
                     return new byte[] { };
             }
         }
 
-        public static Type GetNetworkType(this byte[] address)
+        public static (Type type, Network network) GetNetworkVersion(this byte[] address)
         {
             byte headerByte = address[0];
 
             switch (headerByte)
             {
                 case 0x00:
-                    return Type.MainNetworkPubKey;
+                    return (Type.PublicKey, Network.Main);
                 case 0x03:
-                    return Type.TestNetworkWitnessPubKey;
+                    return (Type.WitnessPublicKey, Network.Test);
                 case 0x04:
                     {
-                        var header = ArrayHelpers.SubArray(address, 4);
+                        var header = address.SubArray(4);
 
                         if (header.SequenceEqual(MainNetworkBip32PubKey))
-                            return Type.MainNetworkBip32PubKey;
+                            return (Type.Bip32PublicKey, Network.Main);
                         if (header.SequenceEqual(MainNetworkBip32PrivKey))
-                            return Type.MainNetworkBip32PrivKey;
+                            return (Type.Bip32PrivateKey, Network.Main);
                         if (header.SequenceEqual(TestNetworkBip32PubKey))
-                            return Type.TestNetworkBip32PubKey;
+                            return (Type.Bip32PublicKey, Network.Test);
                         if (header.SequenceEqual(TestNetworkBip32PrivKey))
-                            return Type.TestNetworkBip32PrivKey;
+                            return (Type.Bip32PrivateKey, Network.Test);
                     }
-                    return Type.Unknown;
-				case 0x05:
-					return Type.MainNetworkScript;
+                    return (Type.Unknown, Network.Unknown);
+                case 0x05:
+                    return (Type.Script, Network.Main);
                 case 0x06:
-                    return Type.MainNetworkWitnessPubKey;
+                    return (Type.WitnessPublicKey, Network.Main);
                 case 0x0A:
-                    return Type.MainNetworkWitnessScript;
+                    return (Type.WitnessScript, Network.Main);
                 case 0x28:
-                    return Type.TestNetworkWitnessScript;
-				case 0x6F:
-					return Type.TestNetworkPubKey;
+                    return (Type.WitnessScript, Network.Test);
+                case 0x6F:
+                    return (Type.PublicKey, Network.Test);
                 case 0x80:
-                    return Type.MainNetworkPrivKey;
-				case 0xC4:
-                    return Type.TestNetworkScript;
+                    return (Type.PrivateKey, Network.Main);
+                case 0xC4:
+                    return (Type.Script, Network.Test);
                 case 0xEF:
-                    return Type.TestNetworkPrivKey;
+                    return (Type.PrivateKey, Network.Test);
                 default:
-                    return Type.Unknown;
+                    return (Type.Unknown, Network.Unknown);
             }
         }
     }

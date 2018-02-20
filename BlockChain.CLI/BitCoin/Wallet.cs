@@ -14,7 +14,7 @@ namespace BlockChain.CLI.Bitcoin
         public PrivateKey PrivateKey { get; private set; }
         public string Base58Check { get; private set; }
         public bool IsCompressed { get; private set; }
-        public NetworkVersion.Type Type { get; private set; }
+        public (NetworkVersion.Type, NetworkVersion.Network) Type { get; private set; }
 
         public Wallet(string wifWallet)
         {
@@ -26,7 +26,7 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public Wallet(PrivateKey privateKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPrivKey, bool compressedPubKey = false)
+        public Wallet(PrivateKey privateKey, (NetworkVersion.Type, NetworkVersion.Network) type, bool compressedPubKey = false)
         {
             if (compressedPubKey)
             {
@@ -42,7 +42,7 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = Calculate(privateKey.Key, type, compressedPubKey);
         }
 
-        public Wallet(byte[] privateKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkPrivKey, bool compressedPubKey = false)
+        public Wallet(byte[] privateKey, (NetworkVersion.Type, NetworkVersion.Network) type, bool compressedPubKey = false)
             : this(new PrivateKey(privateKey), type, compressedPubKey)
         { }
 
@@ -66,22 +66,22 @@ namespace BlockChain.CLI.Bitcoin
             return other.PrivateKey == this.PrivateKey;
         }
 
-        public static (bool, NetworkVersion.Type) Verify(string address)
+        public static (bool, NetworkVersion.Network) Verify(string address)
         {
             var data = address.DecodeBase58();
 
             return Verify(data);
         }
 
-        public static (bool, NetworkVersion.Type) Verify(byte[] data)
+        public static (bool, NetworkVersion.Network) Verify(byte[] data)
         {
             if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
-                return (false, NetworkVersion.Type.Unknown);
+                return (false, NetworkVersion.Network.Unknown);
             
             var checksumStart = data.Length - CHECKSUM_SIZE;
             var wallet = data.SubArray(0, checksumStart);
             var givenChecksum = data.SubArray(checksumStart);
-            var type = data.GetNetworkType();
+            var type = data.GetNetworkVersion();
             var prefix = type.GetPrefix();
 
             var sha256 = new SHA256Managed();
@@ -98,18 +98,18 @@ namespace BlockChain.CLI.Bitcoin
             var isCompressed = endsWith0x01 && expectedSize;
             var properSize = isCompressed ? privKeySize  - 1 == WALLET_SIZE : privKeySize == WALLET_SIZE;
             var validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            var validType = type == NetworkVersion.Type.MainNetworkPrivKey || type == NetworkVersion.Type.TestNetworkPrivKey;
+            var validType = type.type == NetworkVersion.Type.PrivateKey;
 
-            return (properSize && validChecksum && validType, type);
+            return (properSize && validChecksum && validType, type.network);
         }
 
-        private static string Calculate(byte[] privateKey, NetworkVersion.Type type, bool compressedPubKey)
+        private static string Calculate(byte[] privateKey, (NetworkVersion.Type, NetworkVersion.Network) type, bool compressedPubKey)
         {
             var result = InternalCalculate(privateKey, type, compressedPubKey);
             return result.Item6;
         }
 
-        internal static (byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] privateKey, NetworkVersion.Type type, bool compressedPubKey)
+        internal static (byte[], byte[], byte[], byte[], byte[], string) InternalCalculate(byte[] privateKey, (NetworkVersion.Type, NetworkVersion.Network) type, bool compressedPubKey)
         {
             var sha256 = new SHA256Managed();
             byte[] preHashNetwork;
@@ -135,10 +135,10 @@ namespace BlockChain.CLI.Bitcoin
             return (preHashNetwork, publicHash, publicHash2x, checksum, wallet, base58Address);
         }
 
-        internal static (byte[], NetworkVersion.Type, byte[], bool) Extract(string wifWallet)
+        internal static (byte[], (NetworkVersion.Type, NetworkVersion.Network), byte[], bool) Extract(string wifWallet)
         {
             var wallet = wifWallet.DecodeBase58();
-            var type = wallet.GetNetworkType();
+            var type = wallet.GetNetworkVersion();
             var prefix = type.GetPrefix();
 
             var checksumStart = wallet.Length - CHECKSUM_SIZE;

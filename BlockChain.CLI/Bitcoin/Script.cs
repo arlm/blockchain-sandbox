@@ -5,7 +5,7 @@ using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Script : AddressBase<NetworkVersion.Type>
+    public class Script : AddressBase<(NetworkVersion.Type, NetworkVersion.Network)>
     {
         static Script()
         {
@@ -17,14 +17,14 @@ namespace BlockChain.CLI.Bitcoin
             CalculateFunction = HandleCalculateDelegate;
         }
 
-        static (bool IsValid, NetworkVersion.Type Type) HandleVerificationDelegate(byte[] data)
+        static (bool IsValid, (NetworkVersion.Type, NetworkVersion.Network) type) HandleVerificationDelegate(byte[] data)
         {
             if ((data?.Length ?? 0) <= ChecksumSize)
-                return (false, NetworkVersion.Type.Unknown);
+                return (false, (NetworkVersion.Type.Unknown, NetworkVersion.Network.Unknown));
 
             var address = data.SubArray(0, data.Length - ChecksumSize);
             var givenChecksum = data.SubArray(data.Length - ChecksumSize);
-            var type = data.GetNetworkType();
+            var type = data.GetNetworkVersion();
             var prefix = type.GetPrefix();
 
             var sha256 = new SHA256Managed();
@@ -36,14 +36,14 @@ namespace BlockChain.CLI.Bitcoin
 
             bool properSize = address.Length - prefix.Length == AddressSize;
             bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type == NetworkVersion.Type.MainNetworkScript || type == NetworkVersion.Type.TestNetworkScript;
+            bool validType = type.type == NetworkVersion.Type.Script;
 
             return (properSize && validChecksum && validType, type);
         }
 
-        static (byte[] Key, NetworkVersion.Type Type, byte[] Checksum) HandleExtractDelegate(byte[] data)
+        static (byte[] Key, (NetworkVersion.Type, NetworkVersion.Network) type, byte[] Checksum) HandleExtractDelegate(byte[] data)
         {
-            var type = data.GetNetworkType();
+            var type = data.GetNetworkVersion();
             var checksumStart = data.Length - ChecksumSize;
             var checksum = data.SubArray(checksumStart, ChecksumSize);
             var privateKey = data.SubArray(1, checksumStart - 1);
@@ -51,7 +51,7 @@ namespace BlockChain.CLI.Bitcoin
             return (privateKey, type, checksum);
         }
 
-        static string HandleCalculateDelegate(byte[] key, NetworkVersion.Type type)
+        static string HandleCalculateDelegate(byte[] key, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             var result = InternalCalculate(key, type);
             return result.base58Address;
@@ -66,14 +66,14 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public Script(PublicKey publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkScript)
+        public Script(PublicKey publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             Key = publicKey;
             Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
 
-        public Script(byte[] publicKey, NetworkVersion.Type type = NetworkVersion.Type.MainNetworkScript)
+        public Script(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -97,7 +97,7 @@ namespace BlockChain.CLI.Bitcoin
             return other.Key == this.Key;
         }
 
-        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, NetworkVersion.Type type)
+        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();

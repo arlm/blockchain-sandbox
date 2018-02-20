@@ -2,7 +2,7 @@
 namespace BlockChain.CLI.Core
 {
     public interface IAddress<TEnum> 
-        where TEnum : struct, IComparable, IFormattable, IConvertible
+        where TEnum : struct, IComparable
     {
         IKey Key { get; }
         string Base58Check { get; }
