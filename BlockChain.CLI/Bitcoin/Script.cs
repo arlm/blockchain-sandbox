@@ -5,7 +5,7 @@ using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Script : AddressBase<(NetworkVersion.Type, NetworkVersion.Network)>
+    public class Script : AddressBase<NetworkVersion>
     {
         static Script()
         {
@@ -17,15 +17,15 @@ namespace BlockChain.CLI.Bitcoin
             CalculateFunction = HandleCalculateDelegate;
         }
 
-        static (bool IsValid, (NetworkVersion.Type, NetworkVersion.Network) type) HandleVerificationDelegate(byte[] data)
+        static (bool IsValid, NetworkVersion type) HandleVerificationDelegate(byte[] data)
         {
             if ((data?.Length ?? 0) <= ChecksumSize)
-                return (false, (NetworkVersion.Type.Unknown, NetworkVersion.Network.Unknown));
+                return (false, NetworkVersion.Unknown);
 
             var address = data.SubArray(0, data.Length - ChecksumSize);
             var givenChecksum = data.SubArray(data.Length - ChecksumSize);
-            var type = data.GetNetworkVersion();
-            var prefix = type.GetPrefix();
+            var type = NetworkVersion.Parse(data);
+            var prefix = type.Prefix;
 
             var sha256 = new SHA256Managed();
             var hash1 = sha256.ComputeHash(address);
@@ -36,14 +36,14 @@ namespace BlockChain.CLI.Bitcoin
 
             bool properSize = address.Length - prefix.Length == AddressSize;
             bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type.type == NetworkVersion.Type.Script;
+            bool validType = type.Type == AddressType.Script;
 
             return (properSize && validChecksum && validType, type);
         }
 
-        static (byte[] Key, (NetworkVersion.Type, NetworkVersion.Network) type, byte[] Checksum) HandleExtractDelegate(byte[] data)
+        static (byte[] Key, NetworkVersion type, byte[] Checksum) HandleExtractDelegate(byte[] data)
         {
-            var type = data.GetNetworkVersion();
+            var type = NetworkVersion.Parse(data);
             var checksumStart = data.Length - ChecksumSize;
             var checksum = data.SubArray(checksumStart, ChecksumSize);
             var privateKey = data.SubArray(1, checksumStart - 1);
@@ -51,11 +51,7 @@ namespace BlockChain.CLI.Bitcoin
             return (privateKey, type, checksum);
         }
 
-        static string HandleCalculateDelegate(byte[] key, (NetworkVersion.Type, NetworkVersion.Network) type)
-        {
-            var result = InternalCalculate(key, type);
-            return result.base58Address;
-        }
+        static string HandleCalculateDelegate(byte[] key, NetworkVersion type) => InternalCalculate(key, type).base58Address;
 
         public Script(string wifWallet)
         {
@@ -66,14 +62,14 @@ namespace BlockChain.CLI.Bitcoin
             Base58Check = wifWallet;
         }
 
-        public Script(PublicKey publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
+        public Script(PublicKey publicKey, NetworkVersion type)
         {
             Key = publicKey;
             Type = type;
             Base58Check = Calculate(publicKey.Key, type);
         }
 
-        public Script(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
+        public Script(byte[] publicKey, NetworkVersion type)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -97,14 +93,14 @@ namespace BlockChain.CLI.Bitcoin
             return other.Key == this.Key;
         }
 
-        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, (NetworkVersion.Type, NetworkVersion.Network) type)
+        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, NetworkVersion type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();
 
             var publicKeySha = sha256.ComputeHash(publicKey);
             var publicKeyShaRipe = ripeMD160.ComputeHash(publicKeySha);
-            var preHashNetwork = type.GetPrefix().Concat(publicKeyShaRipe);
+            var preHashNetwork = type.Prefix.Concat(publicKeyShaRipe);
             var publicHash = sha256.ComputeHash(preHashNetwork);
             var publicHash2x = sha256.ComputeHash(publicHash);
 
