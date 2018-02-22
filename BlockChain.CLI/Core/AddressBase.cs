@@ -26,6 +26,7 @@ namespace BlockChain.CLI.Core
         protected static CalculateDelegate<TEnum> CalculateFunction { get; set; }
         internal static ExtractDelegate<TEnum> ExtractFunction { get; set; }
 
+        public (bool IsValid, TEnum Type) Verify() => VerifyFunction?.Invoke(Base58Check.DecodeBase58()) ?? (false, default(TEnum));
         public static (bool IsValid, TEnum Type) Verify(byte[] data) => VerifyFunction?.Invoke(data) ?? (false, default(TEnum));
         public static (bool IsValid, TEnum Type) Verify(string address) => VerifyFunction?.Invoke(address.DecodeBase58()) ?? (false, default(TEnum));
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using BlockChain.CLI.Bitcoin;
+using BlockChain.CLI.Core;
 using BlockChain.Core;
 using NUnit.Framework;
 
@@ -63,15 +64,16 @@ namespace BlockChain.Test
         {
             byte[] bytes = key.ToBytes();
 
+            var address = NetworkVersion.CreateFromAddress(base58Check);
+            (var isValid, var detectedType) = address.Verify();
+            Assert.IsTrue(isValid, $"{detectedType.Type:G} address should be valid");
+            Assert.AreEqual(base58Check, address.Base58Check);
 
             switch (type.Type)
             {
                 case AddressType.Bip32PrivateKey:
                 case AddressType.PrivateKey:
                     {
-                        (var isValid, var detectedType) = Wallet.Verify(base58Check);
-                        Assert.IsTrue(isValid, "Private Key should be valid");
-
                         var wallet = new Wallet(base58Check);
                         Assert.AreEqual(isCompressed, wallet.IsCompressed, "Compressed mismatch");
                         Assert.AreEqual(bytes.Length, wallet.Key.Key.Length, "Key length mismatch");
@@ -79,31 +81,23 @@ namespace BlockChain.Test
 
                         (isValid, detectedType) = PublicAddress.Verify(base58Check);
                         Assert.IsFalse(isValid, "Public Key should not be valid");
-
-                        wallet = new Wallet(bytes, type, isCompressed);
-                        Assert.AreEqual(base58Check, wallet.Base58Check);
                     }
                     break;
                 case AddressType.Bip32PublicKey:
                 case AddressType.PublicKey:
                     {
-                        (var isAddressValid, var detectedAddressType) = PublicAddress.Verify(base58Check);
-
                         if (tryCaseFlip)
                         {
                             var flipped = FlipCase(base58Check);
 
                             (var isValidFlippedAddress, var detectedTypeFlippedAddress) = PublicAddress.Verify(flipped);
-                            isAddressValid |= isValidFlippedAddress;
+                            isValid |= isValidFlippedAddress;
                         }
 
-                        Assert.IsTrue(isAddressValid, "Public Key should be valid");
+                        Assert.IsTrue(isValid, "Public Key should be valid");
 
-                        (isAddressValid, detectedAddressType) = Wallet.Verify(base58Check);
-                        Assert.IsFalse(isAddressValid, "Private Key should not be valid");
-
-                        var address = new PublicAddress(bytes, type);
-                        Assert.AreEqual(base58Check, address.Base58Check);
+                        (isValid, detectedType) = Wallet.Verify(base58Check);
+                        Assert.IsFalse(isValid, "Private Key should not be valid");
                     }
                     break;
                 case AddressType.Script:
@@ -122,9 +116,6 @@ namespace BlockChain.Test
 
                         (isScriptValid, detectedScriptType) = Wallet.Verify(base58Check);
                         Assert.IsFalse(isScriptValid, "Private Key should not be valid");
-
-                        var address = new PublicAddress(bytes, type);
-                        Assert.AreEqual(base58Check, address.Base58Check);
                     }
                     break;
                 case AddressType.WitnessScript:
@@ -147,9 +138,6 @@ namespace BlockChain.Test
 
                         (isAddressValid, detectedAddressType) = Wallet.Verify(base58Check);
                         Assert.IsFalse(isAddressValid, "Private Key should not be valid");
-
-                        var address = new PublicAddress(bytes, type);
-                        Assert.AreEqual(base58Check, address.Base58Check);
                     }
                     break;
                 default:

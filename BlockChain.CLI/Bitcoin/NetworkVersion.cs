@@ -87,39 +87,84 @@ namespace BlockChain.CLI.Bitcoin
             }
         }
 
-        public static AddressBase<NetworkVersion> Create(byte[] data, bool compressedPubKey = false)
+        public AddressBase<NetworkVersion> Create(string address)
         {
-            var version = Parse(data);
-
-            if (version.Network == NetworkType.Unknown)
+            if (Network == NetworkType.Unknown)
             {
                 throw new InvalidOperationException("Unknown network type");
             }
 
-            switch (version.Type)
+            switch (Type)
             {
                 case AddressType.PublicKey:
-                    return new PublicAddress(data, version);
+                    return new PublicAddress(address);
                 case AddressType.PrivateKey:
-                    return new Wallet(data, version, compressedPubKey);
+                    return new Wallet(address);
                 case AddressType.Script:
-                    return new Script(data, version);
+                    return new Script(address);
                 case AddressType.Bip32PublicKey:
-                    return new PublicAddress(data, version);
+                    return new PublicAddress(address);
                 case AddressType.Bip32PrivateKey:
-                    return new Wallet(data, version, compressedPubKey);
+                    return new Wallet(address);
                 case AddressType.WitnessPublicKey:
-                    return new Witness(data, version);
+                    return new Witness(address);
                 case AddressType.WitnessScript:
-                    return new Witness(data, version);
+                    return new Witness(address);
                 default:
                     throw new InvalidOperationException("Unknown address type");
             }
         }
 
-        public static NetworkVersion Parse(byte[] address)
+        public AddressBase<NetworkVersion> Create(byte[] key, bool compressedPubKey = false)
         {
-            byte headerByte = address[0];
+            if (Network == NetworkType.Unknown)
+            {
+                throw new InvalidOperationException("Unknown network type");
+            }
+
+            switch (Type)
+            {
+                case AddressType.PublicKey:
+                    return new PublicAddress(key, this);
+                case AddressType.PrivateKey:
+                    return new Wallet(key, this, compressedPubKey);
+                case AddressType.Script:
+                    return new Script(key, this);
+                case AddressType.Bip32PublicKey:
+                    return new PublicAddress(key, this);
+                case AddressType.Bip32PrivateKey:
+                    return new Wallet(key, this, compressedPubKey);
+                case AddressType.WitnessPublicKey:
+                    return new Witness(key, this);
+                case AddressType.WitnessScript:
+                    return new Witness(key, this);
+                default:
+                    throw new InvalidOperationException("Unknown address type");
+            }
+        }
+
+        public static AddressBase<NetworkVersion> CreateFromAddress(string address)
+        {
+            var version = Parse(address);
+
+            return version.Create(address);
+        }
+
+        public static AddressBase<NetworkVersion> CreateFromAddress(byte[] data)
+        {
+            var version = Parse(data);
+
+            return version.Create(data.EncodeBase58());
+        }
+
+        public static NetworkVersion Parse(string address)
+        {
+            return Parse(address.DecodeBase58());
+        }
+
+        public static NetworkVersion Parse(byte[] data)
+        {
+            byte headerByte = data[0];
 
             switch (headerByte)
             {
@@ -129,7 +174,7 @@ namespace BlockChain.CLI.Bitcoin
                     return new NetworkVersion(AddressType.WitnessPublicKey, NetworkType.Test);
                 case 0x04:
                     {
-                        var header = address.SubArray(4);
+                        var header = data.SubArray(4);
 
                         if (header.SequenceEqual(MainNetworkBip32PubKey))
                             return new NetworkVersion(AddressType.Bip32PublicKey, NetworkType.Main);
