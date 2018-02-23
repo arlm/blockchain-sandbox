@@ -71,7 +71,6 @@ namespace BlockChain.Test
 
             switch (type.Type)
             {
-                case AddressType.Bip32PrivateKey:
                 case AddressType.PrivateKey:
                     {
                         var wallet = new PrivateAddress(base58Check);
@@ -80,10 +79,9 @@ namespace BlockChain.Test
                         Assert.AreEqual(bytes, wallet.Key.Data, "Key content mismatch");
 
                         (isValid, detectedType) = PublicAddress.Verify<NetworkVersion>(base58Check);
-                        Assert.IsFalse(isValid, "Public Key should not be valid");
+                        Assert.IsFalse(isValid && detectedType.Type == AddressType.PublicKey, "Public Key should not be valid");
                     }
                     break;
-                case AddressType.Bip32PublicKey:
                 case AddressType.PublicKey:
                     {
                         if (tryCaseFlip)
@@ -94,10 +92,8 @@ namespace BlockChain.Test
                             isValid |= isValidFlippedAddress;
                         }
 
-                        Assert.IsTrue(isValid, "Public Key should be valid");
-
                         (isValid, detectedType) = PrivateAddress.Verify<NetworkVersion>(base58Check);
-                        Assert.IsFalse(isValid, "Private Key should not be valid");
+                        Assert.IsFalse(isValid && detectedType.Type == AddressType.PrivateKey, "Private Key should not be valid");
                     }
                     break;
                 case AddressType.Script:
@@ -112,13 +108,10 @@ namespace BlockChain.Test
                             isScriptValid |= isValidFlippedScript;
                         }
 
-                        Assert.IsTrue(isScriptValid, "Public Key should be valid");
-
                         (isScriptValid, detectedScriptType) = PrivateAddress.Verify<NetworkVersion>(base58Check);
-                        Assert.IsFalse(isScriptValid, "Private Key should not be valid");
+                        Assert.IsFalse(isScriptValid && detectedType.Type == AddressType.PrivateKey, "Private Key should not be valid");
                     }
                     break;
-                case AddressType.WitnessScript:
                 case AddressType.WitnessPublicKey:
                     {
                         (var isAddressValid, var detectedAddressType) = PublicAddress.Verify<NetworkVersion>(base58Check);
@@ -134,14 +127,12 @@ namespace BlockChain.Test
                             isScriptValid |= isValidFlippedScript;
                         }
 
-                        Assert.IsTrue(isAddressValid || isScriptValid, "Public Key should be valid");
-
                         (isAddressValid, detectedAddressType) = PrivateAddress.Verify<NetworkVersion>(base58Check);
-                        Assert.IsFalse(isAddressValid, "Private Key should not be valid");
+                        Assert.IsFalse(isAddressValid && detectedType.Type == AddressType.PrivateKey, "Private Key should not be valid");
                     }
                     break;
                 default:
-                    Assert.Fail("Unknown address type");
+                    Assert.Inconclusive("Unknown address type");
                     break;
             }
         }
