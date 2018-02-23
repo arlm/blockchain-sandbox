@@ -1,9 +1,11 @@
 ﻿using System;
+using BlockChain.CLI.Core.Interfaces;
+
 namespace BlockChain.CLI.Core
 {
     public class PrivateKey : IKey
     {
-        public byte[] Key { get; private set; }
+        public byte[] Data { get; private set; }
 
         public PrivateKey()
         {
@@ -12,7 +14,7 @@ namespace BlockChain.CLI.Core
 
         public PrivateKey(byte[] publicKey)
         {
-            Key = publicKey;
+            Data = publicKey;
         }
     }
 }

@@ -10,6 +10,7 @@
 	<ItemGroup>
 	  <Folder Include="Core\" />
 	  <Folder Include="Bitcoin\" />
+	  <Folder Include="Core\Interfaces\" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\RIPEMD160\src\System.Security.Cryptography.Algorithms\src\RIPEMD160.csproj" />

@@ -16,7 +16,7 @@ namespace BlockChain.Test
         {
             (byte[] testPublicKeySha, byte[] testPublicKeyShaRipe, byte[] testPreHashNetwork,
              byte[] testPublicHash, byte[] testPublicHash2x, byte[] testChecksum,
-             byte[] testAddress, string testBase58Address) = PublicAddress.InternalCalculate(publicKey.ToBytes(), type);
+             byte[] testAddress, string testBase58Address) = PublicAddress.InternalCalculate(publicKey.ToBytes(), type.Network);
 
             Assert.AreEqual(publicKeySha.ToBytes(), testPublicKeySha, "Invalid Public Key SHA-256");
             Assert.AreEqual(publicKeyShaRipe.ToBytes(), testPublicKeyShaRipe, "Invalid Public Key Hash RipeMD160");
@@ -27,12 +27,12 @@ namespace BlockChain.Test
             Assert.AreEqual(address.ToBytes(), testAddress, "Invalid Public Address");
             Assert.AreEqual(base58Address, testBase58Address, "Invalid Public Base58Check Address");
 
-            var addressObj = new PublicAddress(publicKey.ToBytes(), type);
-            Assert.AreEqual(publicKey.ToBytes(), addressObj.Key.Key);
-            Assert.AreEqual(type, addressObj.Type);
-            Assert.AreEqual(base58Address, addressObj.Base58Check);
+            var addressObj = new PublicAddress(publicKey.ToBytes(), type.Network);
+            Assert.AreEqual(publicKey.ToBytes(), addressObj.Key.Data);
+            Assert.AreEqual(type, addressObj.Version);
+            Assert.AreEqual(base58Address, addressObj.Address);
 
-            (bool checksumOk, NetworkVersion testType) = PublicAddress.Verify(base58Address);
+            (var checksumOk, var testType) = PublicAddress.Verify<NetworkVersion>(base58Address);
             Assert.IsTrue(checksumOk);
             Assert.AreEqual(type, testType);
         }

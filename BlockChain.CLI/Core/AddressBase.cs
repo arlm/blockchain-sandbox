@@ -1,38 +1,45 @@
 ﻿using System;
 using BlockChain.CLI.Bitcoin;
+using BlockChain.CLI.Core.Interfaces;
 
 namespace BlockChain.CLI.Core
 {
-    public delegate (bool IsValid, TEnum Type) VerificationDelegate<TEnum>(byte[] data)
-        where TEnum : struct, IComparable;
-
-    public delegate string CalculateDelegate<TEnum>(byte[] key, TEnum type)
-        where TEnum : struct, IComparable;
-
-    public delegate (byte[] Key, TEnum Type, byte[] Checksum) ExtractDelegate<TEnum>(byte[] data)
-        where TEnum : struct, IComparable;
-
-    public abstract class AddressBase<TEnum> : IAddress<TEnum>
-        where TEnum : struct, IComparable
+    public abstract class AddressBase<TAddress, TNetwork> : IAddress<TAddress, TNetwork>
+            where TAddress : struct, IComparable
+            where TNetwork : struct, IComparable
     {
         public IKey Key { get; protected set; }
-        public string Base58Check { get; protected set; }
-        public TEnum Type { get; protected set; }
+        public string Address { get; protected set; }
+        public INetworkVersion<TAddress, TNetwork> Version { get; protected set; }
 
-        protected static int AddressSize { get; set; } = 0;
-        protected static int ChecksumSize { get; set; } = 4;
+        public int AddressSize { get; protected set; } = 0;
+        public int ChecksumSize { get; protected set; } = 0;
 
-        protected static VerificationDelegate<TEnum> VerifyFunction { get; set; }
-        protected static CalculateDelegate<TEnum> CalculateFunction { get; set; }
-        internal static ExtractDelegate<TEnum> ExtractFunction { get; set; }
+        protected abstract (bool IsValid, NetworkVersion type) Verify(string address);
+        protected abstract (byte[] Key, NetworkVersion type, byte[] Checksum) Extract(string address);
+        protected abstract string Calculate(byte[] key, TNetwork type);
 
-        public (bool IsValid, TEnum Type) Verify() => VerifyFunction?.Invoke(Base58Check.DecodeBase58()) ?? (false, default(TEnum));
-        public static (bool IsValid, TEnum Type) Verify(byte[] data) => VerifyFunction?.Invoke(data) ?? (false, default(TEnum));
-        public static (bool IsValid, TEnum Type) Verify(string address) => VerifyFunction?.Invoke(address.DecodeBase58()) ?? (false, default(TEnum));
+        public static (bool IsValid, INetworkVersion<TAddress, TNetwork> Type) Verify<TVersion>(string address)
+            where TVersion : INetworkVersion<TAddress, TNetwork>, new()
+        {
+            try
+            {
+                var version = new TVersion();
+                var resolvedAddress = version.Create(address);
+                return (true, resolvedAddress.Version);
+            }
+            catch { }
 
-        protected static string Calculate(byte[] key, TEnum type) => CalculateFunction?.Invoke(key, type) ?? null;
+            return (false, null);
+        }
 
-        internal static (byte[] Key, TEnum Type, byte[] Checksum) Extract(byte[] data) => ExtractFunction?.Invoke(data) ?? (new byte[] { }, default(TEnum), new byte[] { });
-        internal static (byte[] Key, TEnum Type, byte[] Checksum) Extract(string address) => ExtractFunction?.Invoke(address.DecodeBase58()) ?? (new byte[] { }, default(TEnum), new byte[] { });
+
+        internal static (byte[] Key, INetworkVersion<TAddress, TNetwork> Type) Extract<TVersion>(string address)
+            where TVersion : INetworkVersion<TAddress, TNetwork>, new()
+        {
+            var version = new TVersion();
+            var resolvedAddress = version.Create(address);
+            return (resolvedAddress.Key.Data, resolvedAddress.Version);
+        }
     }
 }

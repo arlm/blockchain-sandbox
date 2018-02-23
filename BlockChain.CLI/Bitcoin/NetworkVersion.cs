@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Linq;
 using BlockChain.CLI.Core;
+using BlockChain.CLI.Core.Interfaces;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public struct NetworkVersion : IComparable, IComparable<NetworkVersion>, IEquatable<NetworkVersion>, IEquatable<AddressType>, IEquatable<NetworkType>
+    public struct NetworkVersion : INetworkVersion<AddressType, NetworkType>,
+        IEquatable<AddressType>, IEquatable<NetworkType>,
+        IComparable<NetworkVersion>, IEquatable<NetworkVersion>
     {
         // From https://en.bitcoin.it/wiki/List_of_address_prefixes
 
@@ -26,23 +29,26 @@ namespace BlockChain.CLI.Bitcoin
 
         public static readonly NetworkVersion Unknown = new NetworkVersion(AddressType.Unknown, NetworkType.Unknown);
 
-        public readonly NetworkType Network;
-        public readonly AddressType Type;
+        private readonly NetworkType network;
+        public NetworkType Network => network;
+
+        private readonly AddressType type;
+        public AddressType Type => type;
 
         public NetworkVersion(AddressType type, NetworkType network) : this()
         {
-            this.Type = type;
-            this.Network = network;
+            this.type = type;
+            this.network = network;
         }
 
         public byte[] Prefix
         {
             get
             {
-                switch (Network)
+                switch (network)
                 {
                     case NetworkType.Main:
-                        switch (Type)
+                        switch (type)
                         {
                             case AddressType.PublicKey:
                                 return MainNetworkPubKey;
@@ -62,7 +68,7 @@ namespace BlockChain.CLI.Bitcoin
                                 return new byte[] { };
                         }
                     case NetworkType.Test:
-                        switch (Type)
+                        switch (type)
                         {
                             case AddressType.PublicKey:
                                 return TestNetworkPubKey;
@@ -87,25 +93,27 @@ namespace BlockChain.CLI.Bitcoin
             }
         }
 
-        public AddressBase<NetworkVersion> Create(string address)
+        public AddressBase<AddressType, NetworkType> Create(string address)
         {
-            if (Network == NetworkType.Unknown)
+            if (network == NetworkType.Unknown)
             {
                 throw new InvalidOperationException("Unknown network type");
             }
 
-            switch (Type)
+            var version = Parse(address);
+
+            switch (version.Type)
             {
                 case AddressType.PublicKey:
                     return new PublicAddress(address);
                 case AddressType.PrivateKey:
-                    return new Wallet(address);
+                    return new PrivateAddress(address);
                 case AddressType.Script:
                     return new Script(address);
                 case AddressType.Bip32PublicKey:
                     return new PublicAddress(address);
                 case AddressType.Bip32PrivateKey:
-                    return new Wallet(address);
+                    return new PrivateAddress(address);
                 case AddressType.WitnessPublicKey:
                     return new Witness(address);
                 case AddressType.WitnessScript:
@@ -115,42 +123,42 @@ namespace BlockChain.CLI.Bitcoin
             }
         }
 
-        public AddressBase<NetworkVersion> Create(byte[] key, bool compressedPubKey = false)
+        public AddressBase<AddressType, NetworkType> Create(byte[] key, bool compressedPubKey = false)
         {
-            if (Network == NetworkType.Unknown)
+            if (network == NetworkType.Unknown)
             {
                 throw new InvalidOperationException("Unknown network type");
             }
 
-            switch (Type)
+            switch (type)
             {
                 case AddressType.PublicKey:
-                    return new PublicAddress(key, this);
+                    return new PublicAddress(key, Network);
                 case AddressType.PrivateKey:
-                    return new Wallet(key, this, compressedPubKey);
+                    return new PrivateAddress(key, Network, compressedPubKey);
                 case AddressType.Script:
-                    return new Script(key, this);
+                    return new Script(key, Network);
                 case AddressType.Bip32PublicKey:
-                    return new PublicAddress(key, this);
+                    return new PublicAddress(key, Network);
                 case AddressType.Bip32PrivateKey:
-                    return new Wallet(key, this, compressedPubKey);
+                    return new PrivateAddress(key, Network, compressedPubKey);
                 case AddressType.WitnessPublicKey:
-                    return new Witness(key, this);
+                    return new Witness(key, Network);
                 case AddressType.WitnessScript:
-                    return new Witness(key, this);
+                    return new Witness(key, Network);
                 default:
                     throw new InvalidOperationException("Unknown address type");
             }
         }
 
-        public static AddressBase<NetworkVersion> CreateFromAddress(string address)
+        public static AddressBase<AddressType, NetworkType> CreateFromAddress(string address)
         {
             var version = Parse(address);
 
             return version.Create(address);
         }
 
-        public static AddressBase<NetworkVersion> CreateFromAddress(byte[] data)
+        public static AddressBase<AddressType, NetworkType> CreateFromAddress(byte[] data)
         {
             var version = Parse(data);
 
@@ -217,28 +225,39 @@ namespace BlockChain.CLI.Bitcoin
             }
             else
             {
-                return false;    
+                return false;
             }
         }
 
         public bool Equals(NetworkVersion other)
         {
-            return this.Type == other.Type && this.Network == other.Network;
+            return this.type == other.type && this.network == other.network;
+        }
+
+
+        public bool Equals(INetworkVersion<AddressType, NetworkType> other)
+        {
+            return this.type == other.Type && this.network == other.Network;
         }
 
         public bool Equals(AddressType other)
         {
-            return this.Type == other;
+            return this.type == other;
         }
 
         public bool Equals(NetworkType other)
         {
-            return this.Network == other;
+            return this.network == other;
         }
 
         public int CompareTo(NetworkVersion other)
         {
-            return this.Type.CompareTo(other.Type) + this.Network.CompareTo(other.Network);
+            return this.type.CompareTo(other.type) + this.network.CompareTo(other.network);
+        }
+
+        public int CompareTo(INetworkVersion<AddressType, NetworkType> other)
+        {
+            return this.type.CompareTo(other.Type) + this.network.CompareTo(other.Network);
         }
 
         public int CompareTo(object obj)
@@ -252,17 +271,21 @@ namespace BlockChain.CLI.Bitcoin
             else
             {
                 return -1;
-            } 
+            }
         }
+
+        public static bool operator ==(NetworkVersion obj, NetworkType network) => obj.network == network;
+        public static bool operator !=(NetworkVersion obj, NetworkType network) => !(obj == network);
+        public static bool operator ==(NetworkVersion obj, AddressType type) => obj.type == type;
+        public static bool operator !=(NetworkVersion obj, AddressType type) => !(obj == type);
+        public static bool operator ==(NetworkVersion obj, NetworkVersion other) => obj.network == other.network && obj.type == other.type;
+        public static bool operator !=(NetworkVersion obj, NetworkVersion other) => !(obj == other);
 
         public override int GetHashCode()
         {
-            return Type.GetHashCode() ^ Network.GetHashCode();
+            return type.GetHashCode() ^ network.GetHashCode();
         }
 
-        public override string ToString()
-        {
-            return $"[Address Type = {Type:G}, Network = {Network:G}]";
-        }
+        public override string ToString() => $"[Address Type = {type:G}, Network = {network:G}]";
     }
 }

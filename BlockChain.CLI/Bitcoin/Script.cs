@@ -5,82 +5,114 @@ using BlockChain.CLI.Core;
 
 namespace BlockChain.CLI.Bitcoin
 {
-    public class Script : AddressBase<NetworkVersion>
+    public sealed class Script : AddressBase<AddressType, NetworkType>
     {
-        static Script()
-        {
-			// RIPEMD-160 hash size
-            AddressSize = 20;
+        private const int CHECKSUM_SIZE = 4;
 
-            VerifyFunction = HandleVerificationDelegate;
-            ExtractFunction = HandleExtractDelegate;
-            CalculateFunction = HandleCalculateDelegate;
+        private Script()
+        {
+            // RIPEMD-160 hash size
+            AddressSize = 20;
+            ChecksumSize = CHECKSUM_SIZE;
         }
 
-        static (bool IsValid, NetworkVersion type) HandleVerificationDelegate(byte[] data)
+        protected override (bool IsValid, NetworkVersion type) Verify(string address)
         {
-            if ((data?.Length ?? 0) <= ChecksumSize)
+            if (string.IsNullOrWhiteSpace(address))
                 return (false, NetworkVersion.Unknown);
 
-            var address = data.SubArray(0, data.Length - ChecksumSize);
-            var givenChecksum = data.SubArray(data.Length - ChecksumSize);
+            var data = address.DecodeBase58();
+
+            if ((data?.Length ?? 0) <= CHECKSUM_SIZE)
+                return (false, NetworkVersion.Unknown);
+
+            var realAddress = data.SubArray(0, data.Length - CHECKSUM_SIZE);
+            var givenChecksum = data.SubArray(data.Length - CHECKSUM_SIZE);
             var type = NetworkVersion.Parse(data);
             var prefix = type.Prefix;
+            bool validChecksum = ValidateChecksum(realAddress, givenChecksum);
 
-            var sha256 = new SHA256Managed();
-            var hash1 = sha256.ComputeHash(address);
-            var hash2 = sha256.ComputeHash(hash1);
-
-            var correctChecksum = new byte[ChecksumSize];
-            Buffer.BlockCopy(hash2, 0, correctChecksum, 0, correctChecksum.Length);
-
-            bool properSize = address.Length - prefix.Length == AddressSize;
-            bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
-            bool validType = type.Type == AddressType.Script;
+            bool properSize = realAddress.Length - prefix.Length == AddressSize;
+            bool validType = type == AddressType.Script;
 
             return (properSize && validChecksum && validType, type);
         }
 
-        static (byte[] Key, NetworkVersion type, byte[] Checksum) HandleExtractDelegate(byte[] data)
+        private static bool ValidateChecksum(byte[] realAddress, byte[] givenChecksum)
         {
-            var type = NetworkVersion.Parse(data);
-            var checksumStart = data.Length - ChecksumSize;
-            var checksum = data.SubArray(checksumStart, ChecksumSize);
-            var privateKey = data.SubArray(1, checksumStart - 1);
+            var sha256 = new SHA256Managed();
+            var hash1 = sha256.ComputeHash(realAddress);
+            var hash2 = sha256.ComputeHash(hash1);
 
-            return (privateKey, type, checksum);
+            var correctChecksum = new byte[CHECKSUM_SIZE];
+            Buffer.BlockCopy(hash2, 0, correctChecksum, 0, correctChecksum.Length);
+            bool validChecksum = givenChecksum.SequenceEqual(correctChecksum);
+            return validChecksum;
         }
 
-        static string HandleCalculateDelegate(byte[] key, NetworkVersion type) => InternalCalculate(key, type).base58Address;
+        protected override (byte[] Key, NetworkVersion type, byte[] Checksum) Extract(string address)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+                throw new InvalidOperationException("Address is not a valid Script");
+
+            var data = address.DecodeBase58();
+            var type = NetworkVersion.Parse(data);
+            var prefix = type.Prefix;
+
+            if (type != AddressType.Script)
+                throw new InvalidOperationException("Address is not a valid Script");
+
+            var checksumStart = data.Length - CHECKSUM_SIZE;
+            var checksum = data.SubArray(checksumStart, CHECKSUM_SIZE);
+
+            var realAddress = data.SubArray(0, data.Length - CHECKSUM_SIZE);
+            bool validChecksum = ValidateChecksum(realAddress, checksum);
+
+            if (!validChecksum)
+                throw new InvalidOperationException("Address is not a valid Script");
+            
+            bool properSize = realAddress.Length - prefix.Length == AddressSize;
+
+            if (!properSize)
+                throw new InvalidOperationException("Address is not a valid Script");
+            
+            var key = data.SubArray(1, checksumStart - 1);
+
+            return (key, type, checksum);
+        }
+
+        protected override string Calculate(byte[] key, NetworkType type) => InternalCalculate(key, type).base58Address;
 
         public Script(string wifWallet)
+            : this()
         {
             (var publicKey, var type, _) = Extract(wifWallet);
 
             Key = new PublicKey(publicKey);
-            Type = type;
-            Base58Check = wifWallet;
+            Version = type;
+            Address = wifWallet;
         }
 
-        public Script(PublicKey publicKey, NetworkVersion type)
+        public Script(PublicKey publicKey, NetworkType type)
+            : this()
         {
             Key = publicKey;
-            Type = type;
-            Base58Check = Calculate(publicKey.Key, type);
+            Version = new NetworkVersion(AddressType.Script, type);
+            Address = Calculate(publicKey.Data, type);
         }
 
-        public Script(byte[] publicKey, NetworkVersion type)
+        public Script(byte[] publicKey, NetworkType type)
             : this(new PublicKey(publicKey), type)
         { }
 
         public override string ToString()
         {
-            return $"[Base58Check Address: {Base58Check}]";
+            return $"[Base58Check Address: {Address}]";
         }
 
         public override int GetHashCode()
         {
-            return Base58Check.GetHashCode();
+            return Address.GetHashCode();
         }
 
         public override bool Equals(object obj)
@@ -93,18 +125,18 @@ namespace BlockChain.CLI.Bitcoin
             return other.Key == this.Key;
         }
 
-        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, NetworkVersion type)
+        internal static (byte[] publicKeySha, byte[] publicKeyShaRipe, byte[] preHashNetwork, byte[] publicHash, byte[] publicHash2x, byte[] checksum, byte[] address, string base58Address) InternalCalculate(byte[] publicKey, NetworkType type)
         {
             var sha256 = new SHA256Managed();
             var ripeMD160 = new RIPEMD160Managed();
 
             var publicKeySha = sha256.ComputeHash(publicKey);
             var publicKeyShaRipe = ripeMD160.ComputeHash(publicKeySha);
-            var preHashNetwork = type.Prefix.Concat(publicKeyShaRipe);
+            var preHashNetwork = new NetworkVersion(AddressType.Script, type).Prefix.Concat(publicKeyShaRipe);
             var publicHash = sha256.ComputeHash(preHashNetwork);
             var publicHash2x = sha256.ComputeHash(publicHash);
 
-            var checksum = new byte[ChecksumSize];
+            var checksum = new byte[CHECKSUM_SIZE];
             Buffer.BlockCopy(publicHash2x, 0, checksum, 0, checksum.Length);
 
             var address = preHashNetwork.Concat(checksum);

@@ -1,4 +1,6 @@
-﻿namespace BlockChain.CLI.Bitcoin
+﻿using BlockChain.CLI.Core.Interfaces;
+
+namespace BlockChain.CLI.Bitcoin
 {
     public enum AddressType
     {
