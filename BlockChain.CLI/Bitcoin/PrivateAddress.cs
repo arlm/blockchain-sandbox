@@ -78,8 +78,7 @@ namespace BlockChain.CLI.Bitcoin
             var endsWith0x01 = data[checksumStart - 1] == COMPRESSED_PUB_KEY_SUFFIX[0];
             int privKeySize = data.Length - prefix.Length - CHECKSUM_SIZE;
             var expectedSize = endsWith0x01 ? privKeySize - 1 == AddressSize : privKeySize == AddressSize;
-            var isCompressed = endsWith0x01 && expectedSize;
-
+            IsCompressed = endsWith0x01 && expectedSize;
 
             var realAddress = data.SubArray(0, data.Length - CHECKSUM_SIZE);
             bool validChecksum = ValidateChecksum(realAddress, checksum);
@@ -87,12 +86,12 @@ namespace BlockChain.CLI.Bitcoin
             if (!validChecksum)
                 throw new InvalidOperationException("Address is not a valid Private Address");
 
-            bool properSize = isCompressed ? privKeySize - 1 == AddressSize : privKeySize == AddressSize;
+            bool properSize = IsCompressed ? privKeySize - 1 == AddressSize : privKeySize == AddressSize;
 
             if (!properSize)
                 throw new InvalidOperationException("Address is not a valid Private Address");
             
-            var key = data.SubArray(1, checksumStart - (isCompressed ? 2 : 1));
+            var key = data.SubArray(1, checksumStart - (IsCompressed ? 2 : 1));
 
             return (key, type, checksum);
         }
@@ -106,7 +105,6 @@ namespace BlockChain.CLI.Bitcoin
 
             Key = new PrivateKey(privateKey);
             Version = type;
-            IsCompressed = false;
             Address = wifWallet;
         }
 
