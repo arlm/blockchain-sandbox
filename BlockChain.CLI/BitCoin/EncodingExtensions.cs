@@ -5,11 +5,12 @@ namespace BlockChain.CLI.Bitcoin
 {
     public static class EncodingExtensions
     {
+        #region Base 64
         public static string EncodeBase64(this Encoding encoding, string plainText)
         {
             if (string.IsNullOrEmpty(plainText))
                 return string.Empty;
-            
+
             var plainTextBytes = encoding.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);
         }
@@ -26,7 +27,9 @@ namespace BlockChain.CLI.Bitcoin
         public static string EncodeBase64(this byte[] plainText) => plainText == null ? string.Empty : Convert.ToBase64String(plainText);
 
         public static byte[] DecodeBase64(this string encodedData) => string.IsNullOrWhiteSpace(encodedData) ? new byte[] { } : Convert.FromBase64String(encodedData);
+        #endregion
 
+        #region Base 58
         public static string EncodeBase58(this Encoding encoding, string plainText)
         {
             if (string.IsNullOrEmpty(plainText))
@@ -208,5 +211,10 @@ namespace BlockChain.CLI.Bitcoin
             }
             return plainTextBytes;
         }
+        #endregion
+
+        #region Base 32
+
+        #endregion
     }
 }

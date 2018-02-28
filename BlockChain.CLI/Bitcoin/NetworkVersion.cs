@@ -111,13 +111,13 @@ namespace BlockChain.CLI.Bitcoin
                 case AddressType.Script:
                     return new Script(address);
                 case AddressType.Bip32PublicKey:
-                    return new PublicAddress(address);
+                    return new DeterministicWallet.PublicAddress(address);
                 case AddressType.Bip32PrivateKey:
-                    return new PrivateAddress(address);
+                    return new DeterministicWallet.PrivateAddress(address);
                 case AddressType.WitnessPublicKey:
-                    return new Witness(address);
+                    return new SegregatedWitness.PublicAddress(address);
                 case AddressType.WitnessScript:
-                    return new Witness(address);
+                    return new SegregatedWitness.Script(address);
                 default:
                     throw new InvalidOperationException("Unknown address type");
             }
@@ -139,13 +139,13 @@ namespace BlockChain.CLI.Bitcoin
                 case AddressType.Script:
                     return new Script(key, Network);
                 case AddressType.Bip32PublicKey:
-                    return new PublicAddress(key, Network);
+                    return new DeterministicWallet.PublicAddress(key, Network);
                 case AddressType.Bip32PrivateKey:
-                    return new PrivateAddress(key, Network, compressedPubKey);
+                    return new DeterministicWallet.PrivateAddress(key, Network, compressedPubKey);
                 case AddressType.WitnessPublicKey:
-                    return new Witness(key, Network);
+                    return new SegregatedWitness.PublicAddress(key, Network);
                 case AddressType.WitnessScript:
-                    return new Witness(key, Network);
+                    return new SegregatedWitness.Script(key, Network);
                 default:
                     throw new InvalidOperationException("Unknown address type");
             }
@@ -167,7 +167,16 @@ namespace BlockChain.CLI.Bitcoin
 
         public static NetworkVersion Parse(string address)
         {
-            return Parse(address.DecodeBase58());
+            byte[] data;
+
+            data = address.DecodeBase58();
+
+            if (data == null || data.Length == 0)
+            {
+                data = address.DecodeBase64();
+            }
+
+            return Parse(data);
         }
 
         public static NetworkVersion Parse(byte[] data)

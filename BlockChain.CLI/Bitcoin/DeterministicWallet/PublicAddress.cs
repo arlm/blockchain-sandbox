@@ -3,13 +3,13 @@ using System.Linq;
 using System.Security.Cryptography;
 using BlockChain.CLI.Core;
 
-namespace BlockChain.CLI.Bitcoin
+namespace BlockChain.CLI.Bitcoin.DeterministicWallet
 {
-    public sealed class Witness : AddressBase<AddressType, NetworkType>
+    public sealed class PublicAddress : AddressBase<AddressType, NetworkType>
     {
         private const int CHECKSUM_SIZE = 4;
 
-        private Witness()
+        private PublicAddress()
         {
             // RIPEMD-160 hash size
             AddressSize = 20;
@@ -33,7 +33,7 @@ namespace BlockChain.CLI.Bitcoin
             bool validChecksum = ValidateChecksum(realAddress, givenChecksum);
 
             bool properSize = realAddress.Length - prefix.Length == AddressSize;
-            bool validType = type == AddressType.PublicKey;
+            bool validType = type == AddressType.Bip32PublicKey;
 
             return (properSize && validChecksum && validType, type);
         }
@@ -53,14 +53,14 @@ namespace BlockChain.CLI.Bitcoin
         protected override (byte[] Key, NetworkVersion type, byte[] Checksum) Extract(string address)
         {
             if (string.IsNullOrWhiteSpace(address))
-                throw new InvalidOperationException("Address is not a valid Witness Public Address");
+                throw new InvalidOperationException("Address is not a valid Public Address");
 
             var data = address.DecodeBase58();
             var type = NetworkVersion.Parse(data);
             var prefix = type.Prefix;
 
-            if (type != AddressType.WitnessPublicKey)
-                throw new InvalidOperationException("Address is not a valid Witness Public Address");
+            if (type != AddressType.Bip32PublicKey)
+                throw new InvalidOperationException("Address is not a valid Public Address");
 
             var checksumStart = data.Length - CHECKSUM_SIZE;
             var checksum = data.SubArray(checksumStart, CHECKSUM_SIZE);
@@ -69,13 +69,13 @@ namespace BlockChain.CLI.Bitcoin
             bool validChecksum = ValidateChecksum(realAddress, checksum);
 
             if (!validChecksum)
-                throw new InvalidOperationException("Address is not a valid Witness Public Address");
+                throw new InvalidOperationException("Address is not a valid Public Address");
 
             bool properSize = realAddress.Length - prefix.Length == AddressSize;
 
             if (!properSize)
-                throw new InvalidOperationException("Address is not a valid Witness Public Address");
-
+                throw new InvalidOperationException("Address is not a valid Public Address");
+            
             var key = data.SubArray(1, checksumStart - 1);
 
             return (key, type, checksum);
@@ -83,7 +83,7 @@ namespace BlockChain.CLI.Bitcoin
 
         protected override string Calculate(byte[] key, NetworkType type) => InternalCalculate(key, type).base58Address;
 
-        public Witness(string wifWallet)
+        public PublicAddress(string wifWallet)
             : this()
         {
             (var publicKey, var type, _) = Extract(wifWallet);
@@ -93,15 +93,15 @@ namespace BlockChain.CLI.Bitcoin
             Address = wifWallet;
         }
 
-        public Witness(PublicKey publicKey, NetworkType type)
+        public PublicAddress(PublicKey publicKey, NetworkType type)
             : this()
         {
             Key = publicKey;
-            Version = new NetworkVersion(AddressType.WitnessPublicKey, type);
+            Version = new NetworkVersion(AddressType.Bip32PublicKey, type);
             Address = Calculate(publicKey.Data, type);
         }
 
-        public Witness(byte[] publicKey, NetworkType type)
+        public PublicAddress(byte[] publicKey, NetworkType type)
             : this(new PublicKey(publicKey), type)
         { }
 
@@ -132,7 +132,7 @@ namespace BlockChain.CLI.Bitcoin
 
             var publicKeySha = sha256.ComputeHash(publicKey);
             var publicKeyShaRipe = ripeMD160.ComputeHash(publicKeySha);
-            var preHashNetwork = new NetworkVersion(AddressType.WitnessPublicKey, type).Prefix.Concat(publicKeyShaRipe);
+            var preHashNetwork = new NetworkVersion(AddressType.Bip32PublicKey, type).Prefix.Concat(publicKeyShaRipe);
             var publicHash = sha256.ComputeHash(preHashNetwork);
             var publicHash2x = sha256.ComputeHash(publicHash);
 

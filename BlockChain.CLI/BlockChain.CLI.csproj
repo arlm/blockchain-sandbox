@@ -11,6 +11,8 @@
 	  <Folder Include="Core\" />
 	  <Folder Include="Bitcoin\" />
 	  <Folder Include="Core\Interfaces\" />
+	  <Folder Include="Bitcoin\SegregatedWitness\" />
+	  <Folder Include="Bitcoin\DeterministicWallet\" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\RIPEMD160\src\System.Security.Cryptography.Algorithms\src\RIPEMD160.csproj" />
