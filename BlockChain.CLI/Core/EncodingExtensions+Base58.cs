@@ -1,35 +1,12 @@
 ﻿using System;
 using System.Text;
 
-namespace BlockChain.CLI.Bitcoin
+namespace BlockChain.CLI.Bitcoin.Core
 {
-    public static class EncodingExtensions
+    public static partial class EncodingExtensions
     {
-        #region Base 64
-        public static string EncodeBase64(this Encoding encoding, string plainText)
-        {
-            if (string.IsNullOrEmpty(plainText))
-                return string.Empty;
+        const string BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
-            var plainTextBytes = encoding.GetBytes(plainText);
-            return Convert.ToBase64String(plainTextBytes);
-        }
-
-        public static string DecodeBase64(this Encoding encoding, string encodedData)
-        {
-            if (string.IsNullOrWhiteSpace(encodedData))
-                return string.Empty;
-
-            var base64EncodedBytes = Convert.FromBase64String(encodedData);
-            return encoding.GetString(base64EncodedBytes);
-        }
-
-        public static string EncodeBase64(this byte[] plainText) => plainText == null ? string.Empty : Convert.ToBase64String(plainText);
-
-        public static byte[] DecodeBase64(this string encodedData) => string.IsNullOrWhiteSpace(encodedData) ? new byte[] { } : Convert.FromBase64String(encodedData);
-        #endregion
-
-        #region Base 58
         public static string EncodeBase58(this Encoding encoding, string plainText)
         {
             if (string.IsNullOrEmpty(plainText))
@@ -44,11 +21,9 @@ namespace BlockChain.CLI.Bitcoin
             if (string.IsNullOrWhiteSpace(encodedData))
                 return string.Empty;
 
-            var base64EncodedBytes = DecodeBase58(encodedData);
-            return encoding.GetString(base64EncodedBytes);
+            var base58EncodedBytes = DecodeBase58(encodedData);
+            return encoding.GetString(base58EncodedBytes);
         }
-
-        const string BASE58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
         public static string EncodeBase58(this uint number)
         {
@@ -83,6 +58,9 @@ namespace BlockChain.CLI.Bitcoin
         // Code based on https://github.com/bitcoin/bitcoin/blob/master/src/base58.cpp
         public static string EncodeBase58(this byte[] plainText)
         {
+            if ((plainText?.Length ?? 0) == 0)
+                return string.Empty;
+
             int zeroes = 0;
             int length = 0;
             int begin = 0;
@@ -211,10 +189,5 @@ namespace BlockChain.CLI.Bitcoin
             }
             return plainTextBytes;
         }
-        #endregion
-
-        #region Base 32
-
-        #endregion
     }
 }

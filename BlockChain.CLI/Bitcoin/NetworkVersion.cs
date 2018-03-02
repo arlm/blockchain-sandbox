@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using BlockChain.CLI.Bitcoin.Core;
 using BlockChain.CLI.Core;
 using BlockChain.CLI.Core.Interfaces;
 
