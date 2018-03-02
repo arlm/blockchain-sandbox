@@ -134,7 +134,7 @@ namespace BlockChain.CLI.Bitcoin.Core
                 if (outLength == 0)
                     break;
 
-                b32.Append(inLength > 0 ? BASE32_ALPHABET[((plainText[index + 2] << 1) & 0x1E) + (((inLength - 2) > 0 ? plainText[index + 3] >> 7 : 0) & 0x01)] : '=');
+                b32.Append(inLength > 0 ? BASE32_ALPHABET[((plainText[index + 2] << 1) & 0x1E) + (((inLength - 1) > 0 ? plainText[index + 3] >> 7 : 0) & 0x01)] : '=');
                 inLength--;
 
                 if (outLength == 0)

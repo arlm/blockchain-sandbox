@@ -133,7 +133,7 @@ namespace BlockChain.CLI.Bitcoin.Core
                 if (outLength == 0 || inLength == 0)
                     break;
 
-                b32.Append(ZBASE32_ALPHABET[((plainText[index + 2] << 1) & 0x1E) + (((inLength - 2) > 0 ? plainText[index + 3] >> 7 : 0) & 0x01)]);
+                b32.Append(ZBASE32_ALPHABET[((plainText[index + 2] << 1) & 0x1E) + (((inLength - 1) > 0 ? plainText[index + 3] >> 7 : 0) & 0x01)]);
                 inLength--;
 
                 if (outLength == 0 || inLength == 0)
@@ -180,7 +180,7 @@ namespace BlockChain.CLI.Bitcoin.Core
             int outLength = 5 * (encodedData.Length / 8) + 6;
             byte[] b256 = new byte[outLength];
 
-            while (inLength >= 8)
+            while (inLength >= 2)
             {
                 if (ZBASE32_ALPHABET.IndexOf(encodedData[index]) < 0 ||
                     ZBASE32_ALPHABET.IndexOf(encodedData[index + 1]) < 0)
@@ -194,7 +194,10 @@ namespace BlockChain.CLI.Bitcoin.Core
                 }
 
                 if (inLength == 2)
+                {
+                    inLength = 0;
                     break;
+                }
 
                 if ((ZBASE32_ALPHABET.IndexOf(encodedData[index + 2]) < 0) ||
                     (ZBASE32_ALPHABET.IndexOf(encodedData[index + 3]) < 0))
@@ -208,7 +211,10 @@ namespace BlockChain.CLI.Bitcoin.Core
                 }
 
                 if (inLength == 4)
+                {
+                    inLength = 0;
                     break;
+                }
 
                 if (ZBASE32_ALPHABET.IndexOf(encodedData[index + 4]) < 0)
                     break;
@@ -221,7 +227,10 @@ namespace BlockChain.CLI.Bitcoin.Core
                 }
 
                 if (inLength == 5)
+                {
+                    inLength = 0;
                     break;
+                }
 
                 if ((ZBASE32_ALPHABET.IndexOf(encodedData[index + 5]) < 0) ||
                     (ZBASE32_ALPHABET.IndexOf(encodedData[index + 6]) < 0))
@@ -235,7 +244,10 @@ namespace BlockChain.CLI.Bitcoin.Core
                 }
 
                 if (inLength == 7)
+                {
+                    inLength = 0;
                     break;
+                }
 
                 if (ZBASE32_ALPHABET.IndexOf(encodedData[index + 7]) < 0)
                     break;
